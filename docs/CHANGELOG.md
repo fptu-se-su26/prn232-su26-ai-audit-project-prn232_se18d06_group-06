@@ -19,17 +19,17 @@ Nguyên tắc ghi changelog:
 
 | Thông tin | Nội dung |
 |---|---|
-| Môn học |  |
-| Mã môn học |  |
-| Lớp |  |
-| Học kỳ |  |
-| Tên bài tập / Project |  |
-| Tên sinh viên / Nhóm |  |
-| MSSV / Danh sách MSSV |  |
-| Giảng viên hướng dẫn |  |
-| Repository URL |  |
-| Ngày bắt đầu |  |
-| Ngày hoàn thành |  |
+| Môn học | PRN232 |
+| Mã môn học | PRN232 |
+| Lớp | SE18D06 |
+| Học kỳ | SU26 |
+| Tên bài tập / Project | WorkBridge - Nền tảng tìm kiếm việc làm |
+| Tên sinh viên / Nhóm | Nhóm 6 |
+| MSSV / Danh sách MSSV | DE180443, DE180444, DE180452, DE180480, DE180516 |
+| Giảng viên hướng dẫn | Chưa cập nhật |
+| Repository URL | https://github.com/fptu-se-su26/prn232-su26-ai-audit-project-prn232_se18d06_group-06 |
+| Ngày bắt đầu | 14/05/2026 |
+| Ngày hoàn thành | Đang thực hiện |
 
 ---
 
@@ -37,7 +37,7 @@ Nguyên tắc ghi changelog:
 
 | Phiên bản/Giai đoạn | Thời gian | Nội dung chính | Trạng thái |
 |---|---|---|---|
-| Phase 01 |  | Khởi tạo project | Not Started / In Progress / Completed |
+| Phase 01 | 14/05/2026 | Khởi tạo project | In Progress |
 | Phase 02 |  | Phân tích yêu cầu | Not Started / In Progress / Completed |
 | Phase 03 |  | Thiết kế hệ thống | Not Started / In Progress / Completed |
 | Phase 04 |  | Implementation | Not Started / In Progress / Completed |
@@ -51,19 +51,19 @@ Nguyên tắc ghi changelog:
 ## Ngày thực hiện
 
 ```text
-DD/MM/YYYY
+14/05/2026
 ```
 
 ## Đã hoàn thành
 
-- [ ] Tạo repository
-- [ ] Tạo cấu trúc thư mục project
-- [ ] Tạo file README.md
-- [ ] Tạo thư mục `docs/`
-- [ ] Tạo file `AI_AUDIT_LOG.md`
-- [ ] Tạo file `PROMPTS.md`
-- [ ] Tạo file `REFLECTION.md`
-- [ ] Tạo file `CHANGELOG.md`
+- [x] Tạo cấu trúc tài liệu project
+- [x] Tạo file README.md
+- [x] Tạo thư mục `docs/`
+- [x] Tạo file `AI_AUDIT_LOG.md`
+- [x] Tạo file `PROMPTS.md`
+- [x] Tạo file `REFLECTION.md`
+- [x] Tạo file `CHANGELOG.md`
+- [x] Chuẩn hóa metadata project trong tài liệu
 - [ ] Khởi tạo source code ban đầu
 - [ ] Cài đặt thư viện/công cụ cần thiết
 - [ ] Cấu hình môi trường chạy project
@@ -72,9 +72,9 @@ DD/MM/YYYY
 
 | STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
 |---:|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
+| 1 | Điền metadata dự án và trạng thái hiện tại vào README | Nhóm 6 | README.md | Cập nhật trực tiếp trong workspace |
+| 2 | Khởi tạo và điền nội dung AI audit log ban đầu | Nhóm 6 | docs/AI_AUDIT_LOG.md | Cập nhật trực tiếp trong workspace |
+| 3 | Khởi tạo prompt log và reflection theo trạng thái tài liệu-only | Nhóm 6 | docs/PROMPTS.md, docs/REFLECTION.md | Cập nhật trực tiếp trong workspace |
 
 ## AI có hỗ trợ không?
 
@@ -84,7 +84,7 @@ DD/MM/YYYY
 Nếu có, mô tả AI đã hỗ trợ phần nào:
 
 ```text
-Viết tại đây...
+Có. AI hỗ trợ chuẩn hóa cách diễn đạt, giữ cấu trúc tài liệu nhất quán và nhắc nhóm không mô tả phần implementation khi dự án chưa bắt đầu code.
 ```
 
 ## Commit/Screenshot minh chứng
@@ -96,7 +96,7 @@ Dán link commit, screenshot hoặc mô tả minh chứng tại đây...
 ## Ghi chú
 
 ```text
-Viết tại đây...
+Giai đoạn này chỉ xác định project và chuẩn hóa bộ tài liệu audit. Source code, thư viện và môi trường chạy sẽ được bổ sung sau.
 ```
 
 ---

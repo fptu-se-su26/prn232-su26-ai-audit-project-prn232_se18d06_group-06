@@ -4,12 +4,12 @@
 
 | Item | Description |
 |---|---|
-| Course |  |
-| Class |  |
+| Course | PRN232 |
+| Class | SE18D06 |
 | Semester | SU26 |
-| Group |  |
-| Topic |  |
-| Repository |  |
+| Group | 6 |
+| Topic | WorkBridge - Nền tảng tìm kiếm việc làm  |
+| Repository | [here](https://github.com/fptu-se-su26/prn232-su26-ai-audit-project-prn232_se18d06_group-06) |
 
 ---
 
@@ -17,11 +17,11 @@
 
 | No | Student ID | Full Name | GitHub Username | Role | Main Responsibility |
 |---:|---|---|---|---|---|
-| 1 |  |  |  | Leader |  |
-| 2 |  |  |  | Member |  |
-| 3 |  |  |  | Member |  |
-| 4 |  |  |  | Member |  |
-| 5 |  |  |  | Member |  |
+| 1 | DE180443 | Hồ Ngọc Thiện |  | Leader |  |
+| 2 | DE180444 | Nguyễn Phúc Hào |  | Member |  |
+| 3 | DE180452 | Lê Quang Anh |  | Member |  |
+| 4 | DE180480 | Lê Tất Kiên |  | Member |  |
+| 5 | DE180516 | Trần Bá Đại |  | Member |  |
 
 ---
 

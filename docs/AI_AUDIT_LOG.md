@@ -4,16 +4,16 @@
 
 | Thông tin | Nội dung |
 |---|---|
-| Môn học |  |
-| Mã môn học |  |
-| Lớp |  |
-| Học kỳ |  |
-| Tên bài tập / Project |  |
-| Tên sinh viên / Nhóm |  |
-| MSSV / Danh sách MSSV |  |
-| Giảng viên hướng dẫn |  |
-| Ngày bắt đầu |  |
-| Ngày hoàn thành |  |
+| Môn học | PRN232 |
+| Mã môn học | PRN232 |
+| Lớp | SE18D06 |
+| Học kỳ | SU26 |
+| Tên bài tập / Project | WorkBridge - Nền tảng tìm kiếm việc làm |
+| Tên sinh viên / Nhóm | Nhóm 6 |
+| MSSV / Danh sách MSSV | DE180443, DE180444, DE180452, DE180480, DE180516 |
+| Giảng viên hướng dẫn | Chưa cập nhật |
+| Ngày bắt đầu | 14/05/2026 |
+| Ngày hoàn thành | Đang thực hiện |
 
 ---
 
@@ -24,7 +24,7 @@
 - [ ] ChatGPT
 - [ ] Gemini
 - [ ] Claude
-- [ ] GitHub Copilot
+- [x] GitHub Copilot
 - [ ] Cursor
 - [ ] Antigravity
 - [ ] Perplexity
@@ -55,7 +55,10 @@ Ví dụ:
 ### Mô tả mục tiêu sử dụng AI
 
 ```text
-Viết tại đây...
+AI được sử dụng để hỗ trợ chuẩn hóa bộ tài liệu khởi tạo dự án, điền các thông tin còn thiếu trong README, AI_AUDIT_LOG, PROMPTS và REFLECTION, đồng thời ghi rõ trạng thái hiện tại của project là mới xác định và chưa có implementation.
+
+AI cũng hỗ trợ diễn đạt lại nội dung theo phong cách nhất quán, dễ đọc và phù hợp với yêu cầu audit của môn học.
+```
 
 ## 4. Nhật ký sử dụng AI chi tiết
 
@@ -77,7 +80,7 @@ Viết tại đây...
 #### 4.1. Prompt đã sử dụng
 
 ```text
-Dán nguyên văn prompt đã hỏi AI tại đây.
+Giúp tôi điền những thứ còn thiếu trong README và các file audit của project. Dự án hiện mới được xác định, chưa implement code, nên chỉ cập nhật phần tài liệu khởi tạo và ghi rõ trạng thái hiện tại.
 ```
 
 #### 4.2. Kết quả AI gợi ý
@@ -85,7 +88,7 @@ Dán nguyên văn prompt đã hỏi AI tại đây.
 Tóm tắt nội dung AI đã trả lời hoặc gợi ý.
 
 ```text
-Viết tại đây...
+AI đề xuất cập nhật metadata dự án, thêm trạng thái chưa implement, và ghi nhận một prompt đầu tiên cho giai đoạn khởi tạo.
 ```
 
 #### 4.3. Phần sinh viên/nhóm đã sử dụng từ AI
@@ -93,7 +96,7 @@ Viết tại đây...
 Mô tả rõ phần nào được sử dụng lại từ gợi ý của AI.
 
 ```text
-Viết tại đây...
+Nhóm sử dụng cách tổ chức nội dung và cách diễn đạt trạng thái dự án trong README, đồng thời dùng cấu trúc ghi nhận AI/prompt để khởi tạo các file audit.
 ```
 
 #### 4.4. Phần sinh viên/nhóm tự chỉnh sửa hoặc cải tiến
@@ -101,7 +104,7 @@ Viết tại đây...
 Mô tả sinh viên/nhóm đã thay đổi, kiểm tra, sửa lỗi hoặc cải tiến gì so với gợi ý ban đầu của AI.
 
 ```text
-Viết tại đây...
+Nhóm đã giữ lại các phần chưa thể xác nhận là đã làm thật, không ghi nhận implementation hay test chưa tồn tại, và chỉ cập nhật những nội dung có thể kiểm chứng ở giai đoạn khởi tạo.
 ```
 
 #### 4.5. Minh chứng
@@ -120,7 +123,7 @@ Viết tại đây...
 Sinh viên/nhóm học được gì sau lần sử dụng AI này?
 
 ```text
-Viết tại đây...
+AI hữu ích khi chuẩn hóa cấu trúc tài liệu và giúp nhóm tránh ghi quá tay các phần chưa làm. Tuy nhiên, mọi nội dung vẫn cần được kiểm tra lại để không biến tài liệu thành mô tả sai về tiến độ dự án.
 ```
 
 ---

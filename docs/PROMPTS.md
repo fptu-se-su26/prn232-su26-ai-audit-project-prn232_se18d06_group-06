@@ -4,16 +4,16 @@
 
 | Thông tin | Nội dung |
 |---|---|
-| Môn học |  |
-| Mã môn học |  |
-| Lớp |  |
-| Học kỳ |  |
-| Tên bài tập / Project |  |
-| Tên sinh viên / Nhóm |  |
-| MSSV / Danh sách MSSV |  |
-| Giảng viên hướng dẫn |  |
-| Ngày bắt đầu |  |
-| Ngày cập nhật gần nhất |  |
+| Môn học | PRN232 |
+| Mã môn học | PRN232 |
+| Lớp | SE18D06 |
+| Học kỳ | SU26 |
+| Tên bài tập / Project | WorkBridge - Nền tảng tìm kiếm việc làm |
+| Tên sinh viên / Nhóm | Nhóm 6 |
+| MSSV / Danh sách MSSV | DE180443, DE180444, DE180452, DE180480, DE180516 |
+| Giảng viên hướng dẫn | Chưa cập nhật |
+| Ngày bắt đầu | 14/05/2026 |
+| Ngày cập nhật gần nhất | 14/05/2026 |
 
 ---
 
@@ -39,7 +39,7 @@ Sinh viên/nhóm cần ghi lại:
 - [ ] ChatGPT
 - [ ] Gemini
 - [ ] Claude
-- [ ] GitHub Copilot
+- [x] GitHub Copilot
 - [ ] Cursor
 - [ ] Antigravity
 - [ ] Microsoft Copilot
@@ -52,7 +52,7 @@ Sinh viên/nhóm cần ghi lại:
 
 | STT | Ngày | Công cụ AI | Mục đích | Prompt tóm tắt | Kết quả chính | Có sử dụng vào bài không? | Minh chứng |
 |---:|---|---|---|---|---|---|---|
-| 1 |  |  |  |  |  | Có / Không |  |
+| 1 | 14/05/2026 | GitHub Copilot | Chuẩn hóa tài liệu khởi tạo dự án | Điền README và file audit cho project mới xác định, chưa implement | README và các file audit được cập nhật theo trạng thái hiện tại | Có | README.md, docs/AI_AUDIT_LOG.md, docs/PROMPTS.md, docs/REFLECTION.md, docs/CHANGELOG.md |
 | 2 |  |  |  |  |  | Có / Không |  |
 | 3 |  |  |  |  |  | Có / Không |  |
 | 4 |  |  |  |  |  | Có / Không |  |
@@ -84,7 +84,7 @@ Sinh viên/nhóm cần ghi lại:
 #### 5.1. Prompt nguyên văn
 
 ```text
-Dán nguyên văn prompt đã hỏi AI tại đây.
+Giúp tôi điền những thứ còn thiếu trong README và các file audit của project. Dự án hiện mới được xác định, chưa implement code, nên chỉ cập nhật phần tài liệu khởi tạo và ghi rõ trạng thái hiện tại.
 ```
 
 #### 5.2. Bối cảnh khi viết prompt
@@ -176,19 +176,19 @@ Viết tại đây...
 #### 5.3. Kết quả AI trả về
 
 ```text
-Viết tại đây...
+AI gợi ý cập nhật metadata dự án, thêm trạng thái chưa implement, và ghi nhận một prompt đầu tiên cho giai đoạn khởi tạo.
 ```
 
 #### 5.4. Kết quả đã áp dụng vào bài
 
 ```text
-Viết tại đây...
+Nội dung được dùng để điền README, AI_AUDIT_LOG, PROMPTS và một phần REFLECTION ở mức tài liệu khởi tạo.
 ```
 
 #### 5.5. Phần sinh viên/nhóm đã chỉnh sửa hoặc cải tiến
 
 ```text
-Viết tại đây...
+Nhóm điều chỉnh lại nội dung để chỉ phản ánh đúng trạng thái hiện tại: mới xác định project, chưa có source code và chưa có chức năng để test.
 ```
 
 #### 5.6. Đánh giá chất lượng prompt
@@ -216,7 +216,7 @@ Viết tại đây...
 #### 5.8. Ghi chú thêm
 
 ```text
-Viết tại đây...
+Prompt này được dùng cho giai đoạn khởi tạo tài liệu nên ưu tiên tính trung thực về trạng thái dự án hơn là mô tả tính năng.
 ```
 
 ---
@@ -298,7 +298,7 @@ Chọn một prompt có ảnh hưởng lớn nhất đến bài tập/project.
 ### 6.1. Prompt được chọn
 
 ```text
-Dán prompt quan trọng nhất tại đây.
+Giúp tôi điền những thứ còn thiếu trong README và các file audit của project. Dự án hiện mới được xác định, chưa implement code, nên chỉ cập nhật phần tài liệu khởi tạo và ghi rõ trạng thái hiện tại.
 ```
 
 ### 6.2. Vì sao prompt này quan trọng?
