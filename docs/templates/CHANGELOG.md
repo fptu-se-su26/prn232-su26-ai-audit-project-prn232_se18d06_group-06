@@ -28,7 +28,7 @@ Nguyên tắc ghi changelog:
 | MSSV / Danh sách MSSV | DE180443, DE180444, DE180452, DE180480, DE180516 |
 | Giảng viên hướng dẫn | Chưa cập nhật |
 | Repository URL | https://github.com/fptu-se-su26/prn232-su26-ai-audit-project-prn232_se18d06_group-06 |
-| Ngày bắt đầu | 19/05/2026 |
+| Ngày bắt đầu | 14/05/2026 |
 | Ngày hoàn thành | Đang thực hiện |
 
 ---
@@ -37,7 +37,7 @@ Nguyên tắc ghi changelog:
 
 | Phiên bản/Giai đoạn | Thời gian | Nội dung chính | Trạng thái |
 |---|---|---|---|
-| Phase 01 | 19/05/2026 | Khởi tạo tài liệu project | In Progress |
+| Phase 01 |  | Khởi tạo project | Not Started / In Progress / Completed |
 | Phase 02 |  | Phân tích yêu cầu | Not Started / In Progress / Completed |
 | Phase 03 |  | Thiết kế hệ thống | Not Started / In Progress / Completed |
 | Phase 04 |  | Implementation | Not Started / In Progress / Completed |
@@ -51,19 +51,19 @@ Nguyên tắc ghi changelog:
 ## Ngày thực hiện
 
 ```text
-19/05/2026
+DD/MM/YYYY
 ```
 
 ## Đã hoàn thành
 
-- [x] Tạo cấu trúc tài liệu project
-- [x] Tạo file README.md
-- [x] Tạo thư mục `docs/`
-- [x] Tạo file `AI_AUDIT_LOG.md`
-- [x] Tạo file `PROMPTS.md`
-- [x] Tạo file `REFLECTION.md`
-- [x] Tạo file `CHANGELOG.md`
-- [x] Chuẩn hóa metadata project trong tài liệu
+- [ ] Tạo repository
+- [ ] Tạo cấu trúc thư mục project
+- [ ] Tạo file README.md
+- [ ] Tạo thư mục `docs/`
+- [ ] Tạo file `AI_AUDIT_LOG.md`
+- [ ] Tạo file `PROMPTS.md`
+- [ ] Tạo file `REFLECTION.md`
+- [ ] Tạo file `CHANGELOG.md`
 - [ ] Khởi tạo source code ban đầu
 - [ ] Cài đặt thư viện/công cụ cần thiết
 - [ ] Cấu hình môi trường chạy project
@@ -72,9 +72,9 @@ Nguyên tắc ghi changelog:
 
 | STT | Nội dung thay đổi | Người thực hiện | File/Module liên quan | Minh chứng |
 |---:|---|---|---|---|
-| 1 | Đồng bộ metadata và mô tả dự án sang AI E-Learning & Teacher Booking Platform | Nhóm 6 | README.md, docs/*.md | Cập nhật trực tiếp trong workspace |
-| 2 | Khởi tạo và điền nội dung AI audit log ban đầu | Nhóm 6 | docs/AI_AUDIT_LOG.md | Cập nhật trực tiếp trong workspace |
-| 3 | Khởi tạo prompt log và reflection theo trạng thái tài liệu-only | Nhóm 6 | docs/PROMPTS.md, docs/REFLECTION.md | Cập nhật trực tiếp trong workspace |
+| 1 |  |  |  |  |
+| 2 |  |  |  |  |
+| 3 |  |  |  |  |
 
 ## AI có hỗ trợ không?
 
@@ -84,7 +84,7 @@ Nguyên tắc ghi changelog:
 Nếu có, mô tả AI đã hỗ trợ phần nào:
 
 ```text
-Có. AI hỗ trợ chuẩn hóa cách diễn đạt, giữ cấu trúc tài liệu nhất quán và nhắc nhóm không mô tả phần implementation khi dự án chưa bắt đầu code.
+Viết tại đây...
 ```
 
 ## Commit/Screenshot minh chứng
@@ -96,7 +96,7 @@ Dán link commit, screenshot hoặc mô tả minh chứng tại đây...
 ## Ghi chú
 
 ```text
-Giai đoạn này chỉ xác định project và chuẩn hóa bộ tài liệu audit. Source code, thư viện và môi trường chạy sẽ được bổ sung sau.
+Viết tại đây...
 ```
 
 ---

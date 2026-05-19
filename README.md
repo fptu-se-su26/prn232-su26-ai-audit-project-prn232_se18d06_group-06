@@ -1,4 +1,4 @@
-# SE AI Audit Project Template
+# AI E-Learning & Teacher Booking Platform
 
 ## 1. Project Information
 
@@ -8,8 +8,8 @@
 | Class | SE18D06 |
 | Semester | SU26 |
 | Group | 6 |
-| Topic | WorkBridge - Nền tảng tìm kiếm việc làm  |
-| Repository | [here](https://github.com/fptu-se-su26/prn232-su26-ai-audit-project-prn232_se18d06_group-06) |
+| Topic | AI E-Learning & Teacher Booking Platform |
+| Repository | [GitHub repository](https://github.com/fptu-se-su26/prn232-su26-ai-audit-project-prn232_se18d06_group-06) |
 
 ---
 
@@ -25,10 +25,34 @@
 
 ---
 
-## 3. Project Structure
+## 3. Project Summary
+
+This project is a web platform that combines online learning, teacher booking, classroom management, assignment tracking, and AI-assisted learning support.
+
+Key ideas:
+
+- Teachers can publish courses, lessons, materials, and assignments.
+- Students, parents, or center staff can search suitable teachers, view availability, and book lessons.
+- Sessions can happen online, at home, or offline at a classroom or center.
+- AI features support lesson summaries, personalized learning paths, assignment generation, and teacher recommendations.
+
+---
+
+## 4. Current Status
+
+The repository is in the documentation-first stage.
+
+- No production source code is committed yet.
+- Core domain docs are being aligned with the project idea.
+- AI audit documents should only record verified work.
+
+---
+
+## 5. Project Structure
 
 ```text
-src/
+frontend/
+backend/
 docs/
 .github/
 README.md
@@ -36,9 +60,9 @@ README.md
 
 ---
 
-## 4. Required AI Audit Documents
+## 6. Required AI Audit Documents
 
-Each group must maintain the following documents:
+Each group should maintain the following documents:
 
 ```text
 docs/AI_AUDIT_LOG.md
@@ -49,19 +73,19 @@ docs/CHANGELOG.md
 
 ---
 
-## 5. Workflow
+## 7. Workflow
 
-Students must follow this workflow:
+Students should follow this workflow:
 
 ```text
-Issue → Branch → Commit → Pull Request → Review → Merge
+Issue -> Branch -> Commit -> Pull Request -> Review -> Merge
 ```
 
 Direct push to the `main` branch should be avoided.
 
 ---
 
-## 6. Branch Naming Convention
+## 8. Branch Naming Convention
 
 ```text
 feature/studentid-task-name
@@ -80,7 +104,7 @@ docs/se123456-update-ai-audit-log
 
 ---
 
-## 7. Commit Message Convention
+## 9. Commit Message Convention
 
 ```text
 [StudentID] type: short description
@@ -89,10 +113,10 @@ docs/se123456-update-ai-audit-log
 Examples:
 
 ```text
-[SE123456] feat: add login page
-[SE123456] fix: fix login validation
+[SE123456] feat: add booking calendar
+[SE123456] fix: validate booking time slot
 [SE123456] docs: update AI audit log
-[SE123456] test: add login test cases
+[SE123456] test: add assignment submission cases
 ```
 
 Common types:
@@ -103,15 +127,22 @@ feat, fix, docs, test, refactor, style, chore
 
 ---
 
-## 8. How to Run
+## 10. How to Run
 
-```text
-Students write project running instructions here.
-```
+The project is not runnable yet because implementation has not started.
+
+When the stack is finalized, update this section with:
+
+- Prerequisites
+- Environment variables
+- Install commands
+- Development commands
+- Test commands
+- Build commands
 
 ---
 
-## 9. AI Usage Rule
+## 11. AI Usage Rule
 
 Students are allowed to use AI tools such as ChatGPT, Gemini, Claude, GitHub Copilot, Cursor, Antigravity, or similar tools.
 
