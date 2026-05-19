@@ -12,7 +12,7 @@
 | Tên sinh viên / Nhóm | Nhóm 6 |
 | MSSV / Danh sách MSSV | DE180443, DE180444, DE180452, DE180480, DE180516 |
 | Giảng viên hướng dẫn | Chưa cập nhật |
-| Ngày hoàn thành reflection | 19/05/2026 |
+| Ngày hoàn thành reflection | 14/05/2026 |
 
 ---
 
@@ -35,7 +35,7 @@ Reflection cần thể hiện:
 Mô tả ngắn gọn quá trình sử dụng AI trong bài tập/project này.
 
 ```text
-Trong giai đoạn hiện tại, AI được dùng để chuẩn hóa bộ tài liệu khởi tạo cho project AI E-Learning & Teacher Booking Platform. Trọng tâm là điền README và các file audit theo đúng trạng thái thực tế: project mới được xác định, chưa có implementation và chưa có chức năng để kiểm thử.
+Viết tại đây...
 ```
 
 Gợi ý:
@@ -55,7 +55,7 @@ Gợi ý:
 - [ ] ChatGPT
 - [ ] Gemini
 - [ ] Claude
-- [x] GitHub Copilot
+- [ ] GitHub Copilot
 - [ ] Cursor
 - [ ] Antigravity
 - [ ] Microsoft Copilot
@@ -65,7 +65,7 @@ Gợi ý:
 ### Công cụ được sử dụng nhiều nhất
 
 ```text
-GitHub Copilot được dùng nhiều nhất vì đang làm việc trực tiếp trong VS Code và hỗ trợ nhanh việc chuẩn hóa tài liệu.
+Viết tại đây...
 ```
 
 ### Lý do sử dụng công cụ đó
@@ -100,7 +100,7 @@ Viết tại đây...
 ### Mô tả chi tiết
 
 ```text
-AI hỗ trợ tốt ở phần viết lại nội dung tài liệu, điền metadata, và giữ cấu trúc nhất quán cho README, changelog, prompt log, và audit log. AI chưa tham gia vào implementation vì dự án chưa đến giai đoạn đó.
+Viết tại đây...
 ```
 
 ---
@@ -110,7 +110,7 @@ AI hỗ trợ tốt ở phần viết lại nội dung tài liệu, điền meta
 ### 6.1. Những điểm AI giúp em/nhóm học tốt hơn
 
 ```text
-AI hữu ích nhất ở giai đoạn khởi tạo tài liệu. Nhóm hiểu rõ hơn cách ghi chép trung thực, không mô tả quá mức các phần chưa làm, và tách bạch giữa kế hoạch với kết quả đã hoàn thành.
+Viết tại đây...
 ```
 
 Gợi ý:
