@@ -203,6 +203,33 @@ namespace WorkBridge.Application.Services
 </html>";
         }
 
-       
+        private static string BuildMessageHtml(string message)
+        {
+            var normalized = (message ?? string.Empty).Replace("\r\n", "\n").Trim();
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                normalized = "Bạn có một cập nhật mới trên WorkBridge. Vui lòng mở trang WorkBridge để xem chi tiết.";
+            }
+
+            var lines = normalized
+                .Split('\n')
+                .Select(line => line.Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .ToList();
+
+            var html = new StringBuilder();
+            foreach (var line in lines)
+            {
+                html.Append($@"<p style=""margin:0 0 12px;"">{WebUtility.HtmlEncode(line)}</p>");
+            }
+
+            return html.ToString();
+        }
+
+        private static string? ExtractVerificationCode(string message)
+        {
+            var match = Regex.Match(message ?? string.Empty, @"(?<!\d)(\d{6})(?!\d)");
+            return match.Success ? match.Groups[1].Value : null;
+        }
     }
 }
