@@ -27,5 +27,13 @@ public partial class ApplicantProfile
 
     public int ReportCount { get; set; }
 
-   
+    public virtual User Applicant { get; set; } = null!;
+
+    public virtual ICollection<ApplicantExperience> ApplicantExperiences { get; set; } = new List<ApplicantExperience>();
+
+    public virtual ICollection<ApplicantSkill> ApplicantSkills { get; set; } = new List<ApplicantSkill>();
+
+    public virtual ICollection<JobApplication> Applications { get; set; } = new List<JobApplication>();
+
+    public virtual ICollection<SavedJob> SavedJobs { get; set; } = new List<SavedJob>();
 }

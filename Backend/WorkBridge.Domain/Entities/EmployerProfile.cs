@@ -27,5 +27,7 @@ public partial class EmployerProfile
 
     public virtual User Employer { get; set; } = null!;
 
-    
+    public virtual ICollection<JobPost> JobPosts { get; set; } = new List<JobPost>();
+
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 }
