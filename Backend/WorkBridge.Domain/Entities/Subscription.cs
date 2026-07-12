@@ -33,5 +33,5 @@ public partial class Subscription
 
     public virtual User? User { get; set; }
 
-   
+    public virtual SubscriptionPlan? SubscriptionPlan { get; set; }
 }
