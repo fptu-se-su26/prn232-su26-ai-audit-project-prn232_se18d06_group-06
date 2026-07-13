@@ -29,5 +29,10 @@ public partial class User
 
     public virtual EmployerProfile? EmployerProfile { get; set; }
 
-    
+    public virtual ICollection<Message> MessageReceivers { get; set; } = new List<Message>();
+
+    public virtual ICollection<Message> MessageSenders { get; set; } = new List<Message>();
+
+    public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
 }
