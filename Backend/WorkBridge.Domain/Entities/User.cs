@@ -35,4 +35,11 @@ public partial class User
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
+    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
+
+    public virtual ICollection<Review> ReviewReviewees { get; set; } = new List<Review>();
+
+    public virtual ICollection<Review> ReviewReviewers { get; set; } = new List<Review>();
+
+    public virtual Role Role { get; set; } = null!;
 }
