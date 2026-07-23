@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WorkBridge.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+391952cce1d813fb9137c70517463858c3c3ad1c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5ff9834da0e4e8c4dbaa412992f97007adb95fe6")]
 [assembly: System.Reflection.AssemblyProductAttribute("WorkBridge.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WorkBridge.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
