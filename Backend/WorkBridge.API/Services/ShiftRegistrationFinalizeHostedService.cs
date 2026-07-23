@@ -27,7 +27,7 @@ namespace WorkBridge.API.Services
                     var context = scope.ServiceProvider.GetRequiredService<WorkBridgeContext>();
                     var workforceService = scope.ServiceProvider.GetRequiredService<IWorkforceService>();
 
-                    
+                    var now = DateTime.Now; // local time, matching the CloseAt local time timezone in DB
 
                     // Sweep for ShiftRegistrationWindows that are open and have passed their close deadline
                     var expiredWindows = await context.ShiftRegistrationWindows
