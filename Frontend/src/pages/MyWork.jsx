@@ -25,9 +25,18 @@ const getCurrentUserId = () => {
     }
 };
 
+const parseDate = (value) => {
+    if (!value) return null;
+    let str = typeof value === 'string' ? value : value.toString();
+    if (str.endsWith('Z')) str = str.slice(0, -1);
+    return new Date(str);
+};
+
 const formatDateTime = (value) => {
     if (!value) return '--';
-    return new Date(value).toLocaleString('vi-VN', {
+    const d = parseDate(value);
+    if (!d) return '--';
+    return d.toLocaleString('vi-VN', {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
@@ -37,7 +46,9 @@ const formatDateTime = (value) => {
 
 const formatDate = (value) => {
     if (!value) return '--';
-    return new Date(value).toLocaleDateString('vi-VN', {
+    const d = parseDate(value);
+    if (!d) return '--';
+    return d.toLocaleDateString('vi-VN', {
         weekday: 'short',
         day: '2-digit',
         month: '2-digit'
@@ -46,7 +57,9 @@ const formatDate = (value) => {
 
 const formatFullDate = (value) => {
     if (!value) return '--';
-    return new Date(value).toLocaleDateString('vi-VN', {
+    const d = parseDate(value);
+    if (!d) return '--';
+    return d.toLocaleDateString('vi-VN', {
         weekday: 'long',
         day: '2-digit',
         month: '2-digit',
@@ -55,14 +68,16 @@ const formatFullDate = (value) => {
 };
 
 const addMinutes = (value, minutes) => {
-    const date = new Date(value);
+    const date = parseDate(value);
+    if (!date) return new Date();
     date.setMinutes(date.getMinutes() + minutes);
     return date;
 };
 
 const isSameCalendarDay = (a, b) => {
-    const first = new Date(a);
-    const second = new Date(b);
+    const first = parseDate(a);
+    const second = parseDate(b);
+    if (!first || !second) return false;
     return first.getDate() === second.getDate() &&
         first.getMonth() === second.getMonth() &&
         first.getFullYear() === second.getFullYear();
@@ -89,7 +104,7 @@ const attendanceMeta = (status) => {
         case 'Rejected':
             return { label: 'Từ chối công', className: 'bg-rose-50 text-rose-700 border-rose-100' };
         default:
-            return { label: 'Chưa bắt đầu', className: 'bg-slate-50 text-slate-600 border-slate-100' };
+            return { label: 'Chưa bắt đầu', className: 'bg-slate-50 text-slate-800 border-slate-100' };
     }
 };
 
@@ -100,7 +115,7 @@ const passRequestMeta = (status) => {
         case 'Rejected':
             return { label: 'Đã từ chối', className: 'bg-rose-50 text-rose-700 border-rose-100' };
         case 'Expired':
-            return { label: 'Đã hết hạn', className: 'bg-slate-100 text-slate-500 border-slate-200' };
+            return { label: 'Đã hết hạn', className: 'bg-slate-100 text-slate-700 border-slate-200' };
         default:
             return { label: 'Đang chờ', className: 'bg-amber-50 text-amber-700 border-amber-100' };
     }
@@ -118,7 +133,7 @@ const getPreferredAssignments = (shift) => (shift?.assignments || [])
 
 const shiftsOverlap = (a, b) => {
     if (!a || !b) return false;
-    return new Date(a.startTime) < new Date(b.endTime) && new Date(b.startTime) < new Date(a.endTime);
+    return parseDate(a.startTime) < parseDate(b.endTime) && parseDate(b.startTime) < parseDate(a.endTime);
 };
 
 const buildRegistrationSelections = (windows, currentUserId) => {
@@ -175,7 +190,9 @@ const isToday = (someDate) => isSameCalendarDay(someDate, new Date());
 
 const formatTime = (value) => {
     if (!value) return '--';
-    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    const d = parseDate(value);
+    if (!d) return '--';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 const getDayName = (dayIndex) => {
@@ -184,14 +201,19 @@ const getDayName = (dayIndex) => {
 };
 
 const getDateKey = (value) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    return date.toISOString().slice(0, 10);
+    const date = parseDate(value);
+    if (!date || Number.isNaN(date.getTime())) return '';
+    // Format as YYYY-MM-DD using local time
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
 };
 
 const getShiftPosition = (startTimeStr, endTimeStr) => {
-    const start = new Date(startTimeStr);
-    const end = new Date(endTimeStr);
+    const start = parseDate(startTimeStr);
+    const end = parseDate(endTimeStr);
+    if (!start || !end) return { top: '0%', height: '8%' };
     const startHour = start.getHours() + start.getMinutes() / 60;
     let endHour = end.getHours() + end.getMinutes() / 60;
 
@@ -214,14 +236,14 @@ const getShiftPosition = (startTimeStr, endTimeStr) => {
 const positionShifts = (dayShifts) => {
     const sorted = dayShifts
         .map((shift) => ({ ...shift }))
-        .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+        .sort((a, b) => parseDate(a.startTime) - parseDate(b.startTime));
     const columns = [];
 
     sorted.forEach((shift) => {
         let placed = false;
         for (let i = 0; i < columns.length; i += 1) {
             const lastShift = columns[i][columns[i].length - 1];
-            if (new Date(shift.startTime) >= new Date(lastShift.endTime)) {
+            if (parseDate(shift.startTime) >= parseDate(lastShift.endTime)) {
                 columns[i].push(shift);
                 shift.colIndex = i;
                 placed = true;
@@ -244,18 +266,18 @@ const positionShifts = (dayShifts) => {
 
 const WorkStat = ({ label, value, icon, tone = 'slate' }) => {
     const tones = {
-        slate: 'bg-slate-950 text-white',
-        sky: 'bg-sky-50 text-sky-700 ring-1 ring-sky-100',
-        emerald: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100',
-        amber: 'bg-amber-50 text-amber-700 ring-1 ring-amber-100'
+        slate: 'bg-slate-900 text-white',
+        sky: 'bg-sky-50 text-sky-700 ring-1 ring-sky-200',
+        emerald: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
+        amber: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
     };
 
     return (
-        <div className="rounded-[22px] border border-white/80 bg-white p-4 shadow-sm">
+        <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
                 <div>
-                    <p className="text-xs font-black text-slate-400">{label}</p>
-                    <p className="mt-1 text-2xl font-black tabular-nums text-slate-950">{value}</p>
+                    <p className="text-xs font-bold text-slate-600">{label}</p>
+                    <p className="mt-1 text-2xl font-black tabular-nums text-slate-900">{value}</p>
                 </div>
                 <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${tones[tone] || tones.slate}`}>
                     <span className="material-symbols-outlined !text-[22px]">{icon}</span>
@@ -271,7 +293,7 @@ const EmptyState = ({ icon, title, description, action }) => (
             <span className="material-symbols-outlined !text-[30px]">{icon}</span>
         </div>
         <h3 className="mt-4 text-base font-black text-slate-800">{title}</h3>
-        <p className="mx-auto mt-1 max-w-md text-sm font-medium leading-relaxed text-slate-500">{description}</p>
+        <p className="mx-auto mt-1 max-w-md text-sm font-medium leading-relaxed text-slate-700">{description}</p>
         {action}
     </div>
 );
@@ -384,11 +406,11 @@ const MyWork = () => {
 
     const getAttendanceActionState = useCallback((shift, assignment) => {
         const status = assignment?.attendanceStatus || 'NotStarted';
-        const start = new Date(shift.startTime);
-        const end = new Date(shift.endTime);
-        const checkInOpenAt = addMinutes(start, -CHECK_IN_LEAD_MINUTES);
-        const checkInCloseAt = addMinutes(end, -CHECK_IN_MIN_REMAINING_MINUTES);
-        const checkOutCloseAt = addMinutes(end, CHECK_OUT_GRACE_MINUTES);
+        const start = parseDate(shift.startTime);
+        const end = parseDate(shift.endTime);
+        const checkInOpenAt = addMinutes(shift.startTime, -CHECK_IN_LEAD_MINUTES);
+        const checkInCloseAt = addMinutes(shift.endTime, -CHECK_IN_MIN_REMAINING_MINUTES);
+        const checkOutCloseAt = addMinutes(shift.endTime, CHECK_OUT_GRACE_MINUTES);
 
         if (!assignment) return { kind: 'none' };
 
@@ -474,7 +496,7 @@ const MyWork = () => {
                 return assignment ? { shift, assignment } : null;
             })
             .filter(Boolean)
-            .sort((a, b) => new Date(a.shift.startTime) - new Date(b.shift.startTime));
+            .sort((a, b) => parseDate(a.shift.startTime) - parseDate(b.shift.startTime));
     }, [shifts, currentUserId]);
 
     const activeEmployments = useMemo(
@@ -488,13 +510,13 @@ const MyWork = () => {
     );
 
     const nextShiftItem = useMemo(
-        () => myShiftItems.find((item) => new Date(item.shift.endTime) >= now),
+        () => myShiftItems.find((item) => parseDate(item.shift.endTime) >= now),
         [myShiftItems, now]
     );
 
     const focusDate = useMemo(() => {
         if (todayShiftItems.length > 0) return now;
-        return nextShiftItem ? new Date(nextShiftItem.shift.startTime) : null;
+        return nextShiftItem ? parseDate(nextShiftItem.shift.startTime) : null;
     }, [todayShiftItems.length, nextShiftItem, now]);
 
     const focusShiftItems = useMemo(() => {
@@ -512,9 +534,9 @@ const MyWork = () => {
             .filter((item) => {
                 const status = item.assignment?.attendanceStatus;
                 return !focusShiftIds.has(item.shift.workShiftId) &&
-                    (new Date(item.shift.endTime) < now || completedAttendanceStatuses.includes(status));
+                    (parseDate(item.shift.endTime) < now || completedAttendanceStatuses.includes(status));
             })
-            .sort((a, b) => new Date(b.shift.startTime) - new Date(a.shift.startTime));
+            .sort((a, b) => parseDate(b.shift.startTime) - parseDate(a.shift.startTime));
     }, [myShiftItems, focusShiftIds, now]);
 
     const paginatedHistoryItems = useMemo(() => {
@@ -641,7 +663,7 @@ const MyWork = () => {
     const canPassShift = (shift, assignment) => {
         if (!assignment || assignment.status !== 'Assigned') return false;
         if (assignment.attendanceStatus) return false;
-        return new Date(shift.startTime).getTime() - Date.now() > 2 * 60 * 60 * 1000;
+        return parseDate(shift.startTime).getTime() - Date.now() > 2 * 60 * 60 * 1000;
     };
 
     const closePassModal = () => {
@@ -723,7 +745,7 @@ const MyWork = () => {
                             ? isCheckout
                                 ? 'bg-sky-600 text-white shadow-lg shadow-sky-500/20 hover:bg-sky-700'
                                 : 'bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary-dk'
-                            : 'border border-slate-200 bg-slate-100 text-slate-400'
+                            : 'border border-slate-200 bg-slate-100 text-slate-800'
                     }`}
                 >
                     <span className="material-symbols-outlined !text-[18px]">
@@ -732,7 +754,7 @@ const MyWork = () => {
                     {processingId === assignment.shiftAssignmentId ? 'Đang xử lý...' : action.label}
                 </button>
                 {action.hint && (
-                    <span className="max-w-[210px] text-[11px] font-semibold text-slate-400 lg:text-right">
+                    <span className="max-w-[210px] text-[11px] font-semibold text-slate-800 lg:text-right">
                         {action.hint}
                     </span>
                 )}
@@ -760,7 +782,7 @@ const MyWork = () => {
                             <span className={`rounded-full border px-3 py-1 text-[10px] font-black ${meta.className}`}>
                                 {meta.label}
                             </span>
-                            <span className="rounded-full border border-slate-100 bg-slate-50 px-3 py-1 text-[10px] font-black text-slate-500">
+                            <span className="rounded-full border border-slate-100 bg-slate-50 px-3 py-1 text-[10px] font-black text-slate-700">
                                 {assignmentSourceLabel(assignment?.assignmentSource)}
                             </span>
                             {needsAction && (
@@ -773,17 +795,17 @@ const MyWork = () => {
                         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                             <div className="min-w-0">
                                 <h3 className="truncate text-base font-black tracking-tight text-slate-950">{getShiftDisplayName(shift.title)}</h3>
-                                <p className="mt-1 truncate text-sm font-semibold text-slate-500">{shift.branchName}</p>
-                                <p className="mt-1 text-xs font-bold text-slate-400">{formatFullDate(shift.startTime)}</p>
+                                <p className="mt-1 truncate text-sm font-semibold text-slate-700">{shift.branchName}</p>
+                                <p className="mt-1 text-xs font-bold text-slate-800">{formatFullDate(shift.startTime)}</p>
                             </div>
                             <div className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 sm:text-right">
-                                <p className="text-[10px] font-black text-slate-400">Giờ ca</p>
+                                <p className="text-[10px] font-black text-slate-800">Giờ ca</p>
                                 <p className="mt-0.5 text-sm font-black tabular-nums text-slate-900">{formatTime(shift.startTime)} đến {formatTime(shift.endTime)}</p>
                             </div>
                         </div>
 
                         {!compact && (
-                            <div className="mt-4 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                            <div className="mt-4 grid gap-2 text-xs text-slate-700 sm:grid-cols-3">
                                 <span className="rounded-xl bg-slate-50 px-3 py-2">
                                     Check-in: <b className="text-slate-700">{formatDateTime(assignment?.checkInAt)}</b>
                                 </span>
@@ -845,15 +867,15 @@ const MyWork = () => {
                             <span className={`rounded-xl border px-3 py-1 text-xs font-black ${
                                 registrationWindow.canSubmit
                                     ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
-                                    : 'border-slate-200 bg-slate-100 text-slate-600'
+                                    : 'border-slate-200 bg-slate-100 text-slate-800'
                             }`}>
                                 {registrationWindow.canSubmit ? 'Đang mở đăng ký' : registrationWindow.status}
                             </span>
                         </div>
                         <h3 className="text-lg font-black tracking-tight text-slate-950">
-                            Tuần bắt đầu {new Date(registrationWindow.weekStartDate).toLocaleDateString('vi-VN')}
+                            Tuần bắt đầu {parseDate(registrationWindow.weekStartDate)?.toLocaleDateString('vi-VN')}
                         </h3>
-                        <p className="mt-1 text-sm font-medium text-slate-500">
+                        <p className="mt-1 text-sm font-medium text-slate-700">
                             Mở từ {formatDateTime(registrationWindow.openAt)} đến {formatDateTime(registrationWindow.closeAt)}
                         </p>
                     </div>
@@ -879,7 +901,7 @@ const MyWork = () => {
                 <div className="space-y-5 p-5">
                     <div className="grid gap-3 lg:grid-cols-[1.3fr_0.7fr]">
                         <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                            <p className="text-xs font-black text-slate-400">Cách chọn ca</p>
+                            <p className="text-xs font-black text-slate-800">Cách chọn ca</p>
                             <p className="mt-1 text-sm font-semibold leading-relaxed text-slate-700">
                                 Chọn các ca bạn có thể làm trong tuần sau. Hệ thống kiểm tra trùng lịch và ưu tiên người gửi sớm hơn khi doanh nghiệp chốt ca.
                             </p>
@@ -898,7 +920,7 @@ const MyWork = () => {
                                 const dayKey = getDateKey(day);
                                 const dayShifts = shiftsInWindow
                                     .filter((shift) => getDateKey(shift.startTime) === dayKey)
-                                    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+                                    .sort((a, b) => parseDate(a.startTime) - parseDate(b.startTime));
 
                                 return (
                                     <div key={dayKey} className="min-w-0 overflow-hidden rounded-xl border border-slate-100 bg-white">
@@ -907,7 +929,7 @@ const MyWork = () => {
                                         }`}>
                                             <div className="min-w-0">
                                                 <p className={`truncate text-[11px] font-black ${
-                                                    isToday(day) ? 'text-primary' : 'text-slate-400'
+                                                    isToday(day) ? 'text-primary' : 'text-slate-800'
                                                 }`}>
                                                     {getDayName(day.getDay())}
                                                 </p>
@@ -915,7 +937,7 @@ const MyWork = () => {
                                                     {day.getDate()}/{day.getMonth() + 1}
                                                 </p>
                                             </div>
-                                            <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-black tabular-nums text-slate-500">
+                                            <span className="shrink-0 rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-black tabular-nums text-slate-700">
                                                 {dayShifts.length}
                                             </span>
                                         </div>
@@ -954,7 +976,7 @@ const MyWork = () => {
                                                     >
                                                         <div className="flex items-start justify-between gap-1.5">
                                                             <div className="min-w-0">
-                                                                <p className="truncate text-[9px] font-black tabular-nums text-slate-400">
+                                                                <p className="truncate text-[9px] font-black tabular-nums text-slate-800">
                                                                     {formatTime(shift.startTime)}-{formatTime(shift.endTime)}
                                                                 </p>
                                                                 <h4 className="mt-0.5 truncate text-[11px] font-black leading-4 text-slate-950">
@@ -974,7 +996,7 @@ const MyWork = () => {
                                                                     ? 'bg-primary text-white'
                                                                     : preferredCount > 0
                                                                         ? 'bg-amber-50 text-amber-700'
-                                                                        : 'bg-slate-100 text-slate-500'
+                                                                        : 'bg-slate-100 text-slate-700'
                                                             }`}>
                                                                 {isSelected ? 'Đã chọn' : preferredCount > 0 ? `${preferredCount} đăng ký` : 'Chọn ca'}
                                                             </span>
@@ -1000,7 +1022,7 @@ const MyWork = () => {
                 </div>
 
                 <div className="grid gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                    <p className="text-xs font-semibold leading-relaxed text-slate-500">
+                    <p className="text-xs font-semibold leading-relaxed text-slate-700">
                         Sau lần gửi đầu, bạn chỉ được lưu chỉnh sửa tối đa 2 lần trước khi doanh nghiệp chốt ca hoặc AI tự động xếp lịch.
                     </p>
                     <button
@@ -1025,7 +1047,7 @@ const MyWork = () => {
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                         <h4 className="truncate text-sm font-black text-slate-900">{request.shiftTitle}</h4>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                        <p className="mt-1 text-xs font-semibold text-slate-700">
                             {isIncoming ? `${request.fromEmployeeName} muốn nhường ca này cho bạn` : `Gửi đến ${request.toEmployeeName}`}
                         </p>
                     </div>
@@ -1033,7 +1055,7 @@ const MyWork = () => {
                         {meta.label}
                     </span>
                 </div>
-                <p className="mt-3 text-xs font-semibold text-slate-400">
+                <p className="mt-3 text-xs font-semibold text-slate-800">
                     {formatDateTime(request.shiftStartTime)} · hết hạn {formatDateTime(request.expiresAt)}
                 </p>
 
@@ -1085,204 +1107,95 @@ const MyWork = () => {
 
     return (
         <div className="applicant-shell min-h-screen pb-16 font-display text-slate-900">
-            <header className="applicant-page-hero">
-                <section className="relative z-10 mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px] xl:items-end">
-                        <div className="min-w-0">
+            <header className="border-b border-slate-200 bg-white shadow-sm">
+                <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
                             <div className="flex flex-wrap items-center gap-2">
-                                <span className="applicant-eyebrow">
-                                    <span className="material-symbols-outlined !text-[17px]">work_history</span>
+                                <span className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                                    <span className="material-symbols-outlined !text-[16px]">work_history</span>
                                     Không gian làm việc
                                 </span>
-                                <span className="inline-flex h-9 items-center rounded-xl border border-white/15 bg-white/10 px-3 text-xs font-bold text-sky-50">
-                                    {needsActionCount > 0 ? `${needsActionCount} việc cần xử lý` : 'Không có việc gấp'}
-                                </span>
+                                {needsActionCount > 0 ? (
+                                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 ring-1 ring-rose-200">
+                                        <span className="material-symbols-outlined !text-[16px]">warning</span>
+                                        {needsActionCount} việc cần xử lý
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                                        <span className="material-symbols-outlined !text-[16px]">check_circle</span>
+                                        Không có việc gấp
+                                    </span>
+                                )}
                             </div>
-
-                            <h1 className="mt-5 text-3xl font-black text-white sm:text-4xl">
+                            <h1 className="mt-4 text-2xl font-black text-primary-dk sm:text-3xl">
                                 Công việc của tôi
                             </h1>
-                            <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-sky-100 sm:text-base">
-                                Theo dõi công việc chính thức, đăng ký ca tuần sau, chấm công và xử lý nhường ca trong một màn hình rõ ràng hơn.
+                            <p className="mt-1 text-sm font-medium text-slate-600">
+                                Theo dõi công việc chính thức, đăng ký ca tuần sau, chấm công và xử lý nhường ca.
                             </p>
-
-                            <div className="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-                                <WorkStat label="Công việc" value={activeEmployments.length} icon="badge" tone="slate" />
-                                <WorkStat label="Ca hôm nay" value={todayShiftItems.length} icon="today" tone="sky" />
-                                <WorkStat label="Đã ghi nhận" value={completedCount} icon="task_alt" tone="emerald" />
-                                <WorkStat label="Yêu cầu chờ" value={pendingIncomingCount} icon="swap_horiz" tone="amber" />
-                            </div>
                         </div>
-
-                        <aside className="rounded-[26px] border border-white/15 bg-white/12 p-5 text-white shadow-2xl shadow-sky-950/10 backdrop-blur">
-                            <div className="flex items-start justify-between gap-3">
-                                <div>
-                                    <p className="text-xs font-black text-sky-100/80">Ca ưu tiên</p>
-                                    <h2 className="mt-1 text-xl font-black text-white">
-                                        {primaryShift ? getShiftDisplayName(primaryShift.shift.title) : 'Chưa có ca sắp tới'}
-                                    </h2>
-                                    <p className="mt-1 text-sm font-semibold text-sky-50/80">
-                                        {primaryShift
-                                            ? `${formatFullDate(primaryShift.shift.startTime)}, ${formatTime(primaryShift.shift.startTime)} đến ${formatTime(primaryShift.shift.endTime)}`
-                                            : 'Khi có ca hôm nay hoặc ca sắp tới, hệ thống sẽ đưa lên đây.'}
-                                    </p>
-                                </div>
-                                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-                                    primaryAction?.enabled ? 'bg-primary text-white' : 'bg-white/15 text-sky-50 ring-1 ring-white/15'
-                                }`}>
-                                    <span className="material-symbols-outlined !text-[24px]">{primaryAction?.enabled ? 'bolt' : 'event'}</span>
-                                </div>
-                            </div>
-
-                            {primaryShift && (
-                                <div className="mt-5 rounded-2xl bg-white p-4 ring-1 ring-slate-100">
-                                    <p className="text-sm font-black text-slate-900">{primaryShift.shift.branchName}</p>
-                                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                                        <div className="rounded-xl bg-slate-50 px-3 py-2">
-                                            <p className="font-black text-slate-400">Check-in</p>
-                                            <p className="mt-1 font-black text-slate-800">{formatTime(primaryShift.assignment.checkInAt)}</p>
-                                        </div>
-                                        <div className="rounded-xl bg-slate-50 px-3 py-2">
-                                            <p className="font-black text-slate-400">Check-out</p>
-                                            <p className="mt-1 font-black text-slate-800">{formatTime(primaryShift.assignment.checkOutAt)}</p>
-                                        </div>
-                                        <div className="rounded-xl bg-slate-50 px-3 py-2">
-                                            <p className="font-black text-slate-400">Đã làm</p>
-                                            <p className="mt-1 font-black text-slate-800">{formatMinutes(primaryShift.assignment.workedMinutes || 0)}</p>
-                                        </div>
-                                    </div>
-                                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                                        {renderAction(primaryShift.shift, primaryShift.assignment)}
-                                        <button
-                                            type="button"
-                                            onClick={() => setSelectedShiftForDetails(primaryShift.shift)}
-                                            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition hover:border-primary/30 hover:text-primary"
-                                        >
-                                            <span className="material-symbols-outlined !text-[18px]">visibility</span>
-                                            Xem ca
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </aside>
                     </div>
-                </section>
+
+                    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <WorkStat label="Công việc" value={activeEmployments.length} icon="badge" tone="slate" />
+                        <WorkStat label="Ca hôm nay" value={todayShiftItems.length} icon="today" tone="sky" />
+                        <WorkStat label="Đã ghi nhận" value={completedCount} icon="task_alt" tone="emerald" />
+                        <WorkStat label="Yêu cầu chờ" value={pendingIncomingCount} icon="swap_horiz" tone="amber" />
+                    </div>
+                </div>
             </header>
 
-            <main className="applicant-page-content mx-auto grid max-w-[1440px] items-start gap-6 px-4 sm:px-6 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] lg:px-8">
-                <aside className="relative min-w-0">
-                    <div
-                        className="my-work-sidebar space-y-5 xl:sticky xl:top-24"
-                    >
-                    <section className="rounded-[28px] border border-white/80 bg-white p-5 shadow-sm">
-                        <div className="mb-5 flex items-start justify-between gap-3">
-                            <div>
-                                <h2 className="text-lg font-black tracking-tight text-slate-950">Công việc đang làm</h2>
-                                <p className="mt-1 text-sm font-medium text-slate-500">Thông tin nhân viên chính thức.</p>
-                            </div>
-                            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                <span className="material-symbols-outlined">badge</span>
-                            </span>
-                        </div>
-
-                        {activeEmployments.length === 0 ? (
-                            <div className="rounded-2xl bg-slate-50 p-5 text-center">
-                                <p className="text-sm font-black text-slate-700">Chưa có công việc nào</p>
-                                <p className="mt-1 text-xs font-semibold text-slate-500">Bạn cần chấp nhận lời mời nhận việc chính thức trước.</p>
-                                <Link to="/offers" className="mt-4 inline-flex h-10 items-center rounded-xl bg-primary px-4 text-sm font-black text-white">
-                                    Xem lời mời
-                                </Link>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {activeEmployments.map((employment) => (
-                                    <article key={employment.employmentId} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="min-w-0">
-                                                <p className="truncate text-base font-black text-slate-900">{employment.position}</p>
-                                                <p className="mt-1 truncate text-sm font-semibold text-slate-500">{employment.branchName}</p>
-                                            </div>
-                                            <span className="rounded-xl bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700 ring-1 ring-emerald-100">
-                                                Đang làm
-                                            </span>
-                                        </div>
-
-                                        {employment.expectedShifts && (
-                                            <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-slate-500">
-                                                <span className="material-symbols-outlined !text-[15px]">schedule</span>
-                                                Ca: {employment.expectedShifts}
-                                            </p>
-                                        )}
-
-                                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                                            <span className="rounded-xl bg-primary/10 px-3 py-1 text-xs font-black text-primary">
-                                                {formatCurrency(employment.currentHourlyRate)}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedEmployerForReport({
-                                                        id: employment.employerId,
-                                                        name: employment.branchName
-                                                    });
-                                                    setShowReportModal(true);
-                                                }}
-                                                className="inline-flex items-center gap-1 text-xs font-black text-slate-400 transition hover:text-rose-600"
-                                                title="Báo cáo doanh nghiệp này"
-                                            >
-                                                <span className="material-symbols-outlined !text-[14px]">flag</span>
-                                                Báo cáo
-                                            </button>
-                                        </div>
-                                    </article>
-                                ))}
-                            </div>
-                        )}
-                    </section>
-
-                    <section className="rounded-[28px] border border-white/80 bg-white p-5 shadow-sm">
-                        <h2 className="text-lg font-black tracking-tight text-slate-950">Lối tắt</h2>
-                        <div className="mt-4 grid gap-2">
-                            {[
-                                { sectionId: 'registration', label: 'Đăng ký ca', icon: 'event_available' },
-                                { sectionId: 'attendance', tab: 'mylist', label: 'Chấm công', icon: 'fact_check' },
-                                { sectionId: 'attendance', tab: 'history', label: 'Lịch sử', icon: 'history' },
-                                { sectionId: 'pass-requests', label: 'Nhường ca', icon: 'swap_horiz' },
-                                { to: '/payslips', label: 'Phiếu lương', icon: 'receipt_long' }
-                            ].map(({ to, sectionId, tab, label, icon }) => (
-                                to ? (
-                                    <Link key={label} to={to} className="flex h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-black text-slate-600 transition hover:bg-slate-50 hover:text-primary">
-                                        <span className="material-symbols-outlined !text-[20px]">{icon}</span>
-                                        {label}
-                                    </Link>
-                                ) : (
-                                    <button
-                                        key={label}
-                                        type="button"
-                                        onClick={() => openWorkShortcut(sectionId, tab)}
-                                        className={`flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-black transition ${
-                                            tab && activeTab === tab
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'text-slate-600 hover:bg-slate-50 hover:text-primary'
-                                        }`}
-                                    >
-                                        <span className="material-symbols-outlined !text-[20px]">{icon}</span>
-                                        {label}
-                                    </button>
-                                )
-                            ))}
-                        </div>
-                    </section>
-                    </div>
-                </aside>
-
+            <main className="mx-auto grid max-w-[1440px] items-start gap-6 px-4 py-8 sm:px-6 xl:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
                 <div className="min-w-0 space-y-6">
-                    <section id="registration" className="scroll-mt-24">
-                        <div className="mb-4 flex flex-col gap-2 rounded-[24px] border border-white/15 bg-gradient-to-br from-sky-950 via-primary to-sky-400 p-5 shadow-lg shadow-sky-900/10 sm:flex-row sm:items-end sm:justify-between">
-                            <div>
-                                <h2 className="text-xl font-black tracking-tight text-white">Đăng ký ca tuần sau</h2>
-                                <p className="mt-1 text-sm font-semibold text-sky-50">Chọn ca theo từng ngày, hệ thống tự kiểm tra trùng lịch trước khi gửi.</p>
+                    {primaryShift && (
+                        <section className="rounded-[24px] border border-primary/20 bg-primary/5 p-5 shadow-sm">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined !text-[20px] text-primary">bolt</span>
+                                        <h2 className="text-lg font-black tracking-tight text-primary">Ca ưu tiên: {getShiftDisplayName(primaryShift.shift.title)}</h2>
+                                    </div>
+                                    <p className="mt-1 text-sm font-semibold text-slate-700">
+                                        {formatFullDate(primaryShift.shift.startTime)}, {formatTime(primaryShift.shift.startTime)} đến {formatTime(primaryShift.shift.endTime)} tại {primaryShift.shift.branchName}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedShiftForDetails(primaryShift.shift)}
+                                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 shadow-sm transition hover:border-primary/30 hover:text-primary"
+                                >
+                                    <span className="material-symbols-outlined !text-[16px]">visibility</span>
+                                    Xem ca
+                                </button>
                             </div>
+                            
+                            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-[16px] bg-white p-4 ring-1 ring-slate-200/60 shadow-sm">
+                                <div className="grid grid-cols-3 gap-6 text-sm">
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-500">Check-in</p>
+                                        <p className="mt-0.5 font-black text-slate-900">{formatTime(primaryShift.assignment.checkInAt)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-500">Check-out</p>
+                                        <p className="mt-0.5 font-black text-slate-900">{formatTime(primaryShift.assignment.checkOutAt)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-500">Đã làm</p>
+                                        <p className="mt-0.5 font-black text-slate-900">{formatMinutes(primaryShift.assignment.workedMinutes || 0)}</p>
+                                    </div>
+                                </div>
+                                <div className="shrink-0">
+                                    {renderAction(primaryShift.shift, primaryShift.assignment)}
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    <section id="registration" className="scroll-mt-24">
+                        <div className="mb-4">
+                            <h2 className="text-xl font-black tracking-tight text-primary-dk">Đăng ký ca tuần sau</h2>
+                            <p className="mt-1 text-sm font-medium text-slate-600">Chọn ca theo từng ngày, hệ thống tự kiểm tra trùng lịch trước khi gửi.</p>
                         </div>
                         {registrationWindows.length === 0 ? (
                             <EmptyState
@@ -1300,15 +1213,15 @@ const MyWork = () => {
                     <section id="attendance" className="scroll-mt-24 overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-sm">
                         <div className="grid gap-4 border-b border-slate-100 p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                             <div>
-                                <h2 className="text-xl font-black tracking-tight text-slate-950">Lịch làm việc và chấm công</h2>
-                                <p className="mt-1 text-sm font-medium text-slate-500">Xem lịch tuần, vào ca/ra ca và kiểm tra lịch sử công.</p>
+                                <h2 className="text-xl font-black tracking-tight text-primary-dk">Lịch làm việc và chấm công</h2>
+                                <p className="mt-1 text-sm font-medium text-slate-700">Xem lịch tuần, vào ca/ra ca và kiểm tra lịch sử công.</p>
                             </div>
                             <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('mylist')}
                                     className={`h-10 rounded-lg px-4 text-xs font-black transition ${
-                                        activeTab === 'mylist' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                        activeTab === 'mylist' ? 'bg-white text-primary shadow-sm' : 'text-slate-700 hover:text-slate-900'
                                     }`}
                                 >
                                     Chấm công
@@ -1317,7 +1230,7 @@ const MyWork = () => {
                                     type="button"
                                     onClick={() => setActiveTab('history')}
                                     className={`h-10 rounded-lg px-4 text-xs font-black transition ${
-                                        activeTab === 'history' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                        activeTab === 'history' ? 'bg-white text-primary shadow-sm' : 'text-slate-700 hover:text-slate-900'
                                     }`}
                                 >
                                     Lịch sử
@@ -1326,7 +1239,7 @@ const MyWork = () => {
                                     type="button"
                                     onClick={() => setActiveTab('timetable')}
                                     className={`h-10 rounded-lg px-4 text-xs font-black transition ${
-                                        activeTab === 'timetable' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                                        activeTab === 'timetable' ? 'bg-white text-primary shadow-sm' : 'text-slate-700 hover:text-slate-900'
                                     }`}
                                 >
                                     Lưới tuần
@@ -1341,7 +1254,7 @@ const MyWork = () => {
                                         <button
                                             type="button"
                                             onClick={() => navigateWeek(-1)}
-                                            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-50"
+                                            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-800 transition hover:bg-slate-50"
                                         >
                                             <span className="material-symbols-outlined !text-[20px]">chevron_left</span>
                                         </button>
@@ -1351,19 +1264,19 @@ const MyWork = () => {
                                         <button
                                             type="button"
                                             onClick={() => navigateWeek(1)}
-                                            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-50"
+                                            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-800 transition hover:bg-slate-50"
                                         >
                                             <span className="material-symbols-outlined !text-[20px]">chevron_right</span>
                                         </button>
                                     </div>
-                                    <span className="text-xs font-black text-slate-400">{shifts.length} ca đang hoạt động</span>
+                                    <span className="text-xs font-black text-slate-800">{shifts.length} ca đang hoạt động</span>
                                 </div>
                                 <div className="overflow-hidden">
                                     <div className="w-full bg-white">
                                         <div className="grid grid-cols-[44px_repeat(7,minmax(0,1fr))] border-b border-slate-100 bg-slate-50/60 py-3 text-center sm:grid-cols-[64px_repeat(7,minmax(0,1fr))] sm:py-4">
-                                            <div className="flex items-center justify-center text-xs font-black text-slate-400">Giờ</div>
+                                            <div className="flex items-center justify-center text-xs font-black text-slate-800">Giờ</div>
                                             {weekDays.map((day) => (
-                                                <div key={getDateKey(day)} className={`min-w-0 text-[10px] sm:text-xs ${isToday(day) ? 'font-black text-primary' : 'font-bold text-slate-500'}`}>
+                                                <div key={getDateKey(day)} className={`min-w-0 text-[10px] sm:text-xs ${isToday(day) ? 'font-black text-primary' : 'font-bold text-slate-700'}`}>
                                                     <div className="truncate px-0.5">{getDayName(day.getDay())}</div>
                                                     <div className="mt-0.5 text-sm font-black sm:text-base">{day.getDate()}</div>
                                                 </div>
@@ -1377,7 +1290,7 @@ const MyWork = () => {
                                                 ))}
                                             </div>
 
-                                            <div className="flex h-full select-none flex-col justify-between border-r border-slate-100 bg-slate-50/50 py-1 text-[9px] font-black text-slate-400 sm:text-[10px]">
+                                            <div className="flex h-full select-none flex-col justify-between border-r border-slate-100 bg-slate-50/50 py-1 text-[9px] font-black text-slate-800 sm:text-[10px]">
                                                 {Array.from({ length: 15 }).map((_, hour) => (
                                                     <div key={hour} className="flex h-5 items-center justify-center text-center">
                                                         {String(8 + hour).padStart(2, '0')}:00
@@ -1450,7 +1363,7 @@ const MyWork = () => {
                                                                                         );
                                                                                     })
                                                                                 ) : (
-                                                                                    <span className="rounded-md border border-dashed border-slate-200 bg-white/70 px-1.5 py-0.5 text-[8px] font-bold text-slate-400">
+                                                                                    <span className="rounded-md border border-dashed border-slate-200 bg-white/70 px-1.5 py-0.5 text-[8px] font-bold text-slate-800">
                                                                                         Chưa xếp
                                                                                     </span>
                                                                                 )}
@@ -1482,14 +1395,14 @@ const MyWork = () => {
                                     <div className="grid gap-3 border-b border-slate-100 px-5 py-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
                                         <div>
                                             <h3 className="text-base font-black text-slate-950">Lịch sử đã làm</h3>
-                                            <p className="mt-0.5 text-sm font-medium text-slate-500">
+                                            <p className="mt-0.5 text-sm font-medium text-slate-700">
                                                 Danh sách được phân trang để kiểm tra công gọn hơn.
                                             </p>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => setActiveTab('mylist')}
-                                            className="inline-flex h-10 w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-600 transition hover:border-primary/30 hover:text-primary"
+                                            className="inline-flex h-10 w-fit items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-black text-slate-800 transition hover:border-primary/30 hover:text-primary"
                                         >
                                             <span className="material-symbols-outlined !text-[17px]">fact_check</span>
                                             Về chấm công
@@ -1541,7 +1454,7 @@ const MyWork = () => {
                                                     <h3 className="text-base font-black text-slate-950">
                                                         {focusDate && isSameCalendarDay(focusDate, now) ? 'Ca cần xử lý hôm nay' : 'Ngày làm việc tiếp theo'}
                                                     </h3>
-                                                    <p className="mt-0.5 text-sm font-medium text-slate-500">
+                                                    <p className="mt-0.5 text-sm font-medium text-slate-700">
                                                         {focusDate ? formatFullDate(focusDate) : 'Chưa có ca sắp tới'}
                                                     </p>
                                                 </div>
@@ -1570,12 +1483,12 @@ const MyWork = () => {
                                             className="flex w-full items-center justify-between gap-4 rounded-[24px] border border-slate-200/70 bg-white px-5 py-4 text-left transition hover:border-primary/25 hover:shadow-sm"
                                         >
                                             <span className="flex min-w-0 items-center gap-3">
-                                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                                                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
                                                     <span className="material-symbols-outlined !text-[22px]">history</span>
                                                 </span>
                                                 <span className="min-w-0">
                                                     <span className="block text-sm font-black text-slate-950">Xem lịch sử đã làm</span>
-                                                    <span className="mt-0.5 block text-xs font-semibold text-slate-500">
+                                                    <span className="mt-0.5 block text-xs font-semibold text-slate-700">
                                                         {historyItems.length} ca, phân trang {HISTORY_PAGE_SIZE} ca mỗi lần xem.
                                                     </span>
                                                 </span>
@@ -1592,12 +1505,12 @@ const MyWork = () => {
 
                     <section id="pass-requests" className="scroll-mt-24 overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-sm">
                         <div className="border-b border-slate-100 p-5">
-                            <h2 className="text-xl font-black tracking-tight text-slate-950">Yêu cầu nhường ca</h2>
-                            <p className="mt-1 text-sm font-medium text-slate-500">Yêu cầu tự động hết hạn 2 giờ trước khi ca bắt đầu.</p>
+                            <h2 className="text-xl font-black tracking-tight text-primary-dk">Yêu cầu nhường ca</h2>
+                            <p className="mt-1 text-sm font-medium text-slate-700">Yêu cầu tự động hết hạn 2 giờ trước khi ca bắt đầu.</p>
                         </div>
                         <div className="grid divide-y divide-slate-100 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
                             <div className="p-5">
-                                <h3 className="mb-3 text-sm font-black text-slate-500">Yêu cầu nhận từ đồng nghiệp</h3>
+                                <h3 className="mb-3 text-sm font-black text-slate-700">Yêu cầu nhận từ đồng nghiệp</h3>
                                 {incomingRequests.length === 0 ? (
                                     <EmptyState icon="inbox" title="Không có yêu cầu gửi đến" description="Khi đồng nghiệp muốn nhường ca cho bạn, yêu cầu sẽ xuất hiện ở đây." />
                                 ) : (
@@ -1607,7 +1520,7 @@ const MyWork = () => {
                                 )}
                             </div>
                             <div className="p-5">
-                                <h3 className="mb-3 text-sm font-black text-slate-500">Yêu cầu bạn đã gửi</h3>
+                                <h3 className="mb-3 text-sm font-black text-slate-700">Yêu cầu bạn đã gửi</h3>
                                 {outgoingRequests.length === 0 ? (
                                     <EmptyState icon="outbox" title="Bạn chưa gửi yêu cầu nào" description="Khi cần đổi ca, dùng nút nhường ca trong thẻ chấm công." />
                                 ) : (
@@ -1619,6 +1532,109 @@ const MyWork = () => {
                         </div>
                     </section>
                 </div>
+                <aside className="relative min-w-0">
+                    <div className="space-y-5 xl:sticky xl:top-24">
+                        <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                            <div className="mb-5 flex items-start justify-between gap-3">
+                                <div>
+                                    <h2 className="text-lg font-black tracking-tight text-primary-dk">Công việc đang làm</h2>
+                                    <p className="mt-1 text-sm font-medium text-slate-600">Thông tin nhân viên chính thức.</p>
+                                </div>
+                                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                    <span className="material-symbols-outlined">badge</span>
+                                </span>
+                            </div>
+
+                            {activeEmployments.length === 0 ? (
+                                <div className="rounded-2xl bg-slate-50 p-5 text-center">
+                                    <p className="text-sm font-black text-slate-700">Chưa có công việc nào</p>
+                                    <p className="mt-1 text-xs font-medium text-slate-500">Bạn cần chấp nhận lời mời nhận việc chính thức trước.</p>
+                                    <Link to="/offers" className="mt-4 inline-flex h-10 items-center rounded-xl bg-primary px-4 text-sm font-black text-white">
+                                        Xem lời mời
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {activeEmployments.map((employment) => (
+                                        <article key={employment.employmentId} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-base font-black text-slate-900">{employment.position}</p>
+                                                    <p className="mt-1 truncate text-sm font-semibold text-slate-700">{employment.branchName}</p>
+                                                </div>
+                                                <span className="shrink-0 whitespace-nowrap rounded-xl bg-emerald-50 px-2.5 py-1 text-[10px] font-black text-emerald-700 ring-1 ring-emerald-200">
+                                                    Đang làm
+                                                </span>
+                                            </div>
+
+                                            {employment.expectedShifts && (
+                                                <p className="mt-3 flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                                                    <span className="material-symbols-outlined !text-[15px]">schedule</span>
+                                                    Ca: {employment.expectedShifts}
+                                                </p>
+                                            )}
+
+                                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                                                <span className="rounded-xl bg-primary/10 px-3 py-1 text-xs font-black text-primary">
+                                                    {formatCurrency(employment.currentHourlyRate)}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedEmployerForReport({
+                                                            id: employment.employerId,
+                                                            name: employment.branchName
+                                                        });
+                                                        setShowReportModal(true);
+                                                    }}
+                                                    className="inline-flex items-center gap-1 text-xs font-black text-slate-600 transition hover:text-rose-600"
+                                                    title="Báo cáo doanh nghiệp này"
+                                                >
+                                                    <span className="material-symbols-outlined !text-[14px]">flag</span>
+                                                    Báo cáo
+                                                </button>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                            <h2 className="text-lg font-black tracking-tight text-primary-dk">Lối tắt</h2>
+                            <div className="mt-4 grid gap-2">
+                                {[
+                                    { sectionId: 'registration', label: 'Đăng ký ca', icon: 'event_available' },
+                                    { sectionId: 'attendance', tab: 'mylist', label: 'Chấm công', icon: 'fact_check' },
+                                    { sectionId: 'attendance', tab: 'history', label: 'Lịch sử', icon: 'history' },
+                                    { sectionId: 'pass-requests', label: 'Nhường ca', icon: 'swap_horiz' },
+                                    { to: '/payslips', label: 'Phiếu lương', icon: 'receipt_long' }
+                                ].map(({ to, sectionId, tab, label, icon }) => (
+                                    to ? (
+                                        <Link key={label} to={to} className="flex h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-black text-slate-700 transition hover:bg-slate-50 hover:text-primary">
+                                            <span className="material-symbols-outlined !text-[20px]">{icon}</span>
+                                            {label}
+                                        </Link>
+                                    ) : (
+                                        <button
+                                            key={label}
+                                            type="button"
+                                            onClick={() => openWorkShortcut(sectionId, tab)}
+                                            className={`flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-black transition ${
+                                                tab && activeTab === tab
+                                                    ? 'bg-primary/10 text-primary'
+                                                    : 'text-slate-700 hover:bg-slate-50 hover:text-primary'
+                                            }`}
+                                        >
+                                            <span className="material-symbols-outlined !text-[20px]">{icon}</span>
+                                            {label}
+                                        </button>
+                                    )
+                                ))}
+                            </div>
+                        </section>
+                    </div>
+                </aside>
             </main>
 
             {selectedShiftForDetails && (
@@ -1630,14 +1646,14 @@ const MyWork = () => {
                                     {selectedShiftForDetails.branchName}
                                 </span>
                                 <h3 className="mt-2 text-xl font-black tracking-tight text-slate-950">{getShiftDisplayName(selectedShiftForDetails.title)}</h3>
-                                <p className="mt-1 text-xs font-bold text-slate-500">
+                                <p className="mt-1 text-xs font-bold text-slate-700">
                                     {formatDateTime(selectedShiftForDetails.startTime)} đến {formatDateTime(selectedShiftForDetails.endTime)}
                                 </p>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setSelectedShiftForDetails(null)}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100 hover:text-slate-800"
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-100 hover:text-slate-800"
                                 aria-label="Đóng chi tiết ca"
                             >
                                 <span className="material-symbols-outlined !text-[21px]">close</span>
@@ -1646,14 +1662,14 @@ const MyWork = () => {
 
                         <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
                             <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                                <span className="text-xs font-black text-slate-400">Yêu cầu chức vụ</span>
+                                <span className="text-xs font-black text-slate-800">Yêu cầu chức vụ</span>
                                 <p className="mt-1 text-sm font-black text-slate-800">{selectedShiftForDetails.requiredRole || 'Nhân viên'}</p>
                             </div>
 
                             <section className="space-y-3">
-                                <h4 className="text-sm font-black text-slate-500">Thành viên trong ca làm</h4>
+                                <h4 className="text-sm font-black text-slate-700">Thành viên trong ca làm</h4>
                                 {getActiveAssignments(selectedShiftForDetails).length === 0 ? (
-                                    <p className="rounded-2xl bg-slate-50 p-4 text-xs font-semibold text-slate-400">Chưa có nhân viên nào được phân công.</p>
+                                    <p className="rounded-2xl bg-slate-50 p-4 text-xs font-semibold text-slate-800">Chưa có nhân viên nào được phân công.</p>
                                 ) : (
                                     <div className="space-y-3">
                                         {getActiveAssignments(selectedShiftForDetails).map((assignment) => {
@@ -1665,7 +1681,7 @@ const MyWork = () => {
                                                 <article key={assignment.shiftAssignmentId} className={`rounded-2xl border p-4 ${isMe ? 'border-primary/20 bg-primary/5' : 'border-slate-100 bg-slate-50/60'}`}>
                                                     <div className="flex items-center justify-between gap-3">
                                                         <div className="flex min-w-0 items-center gap-3">
-                                                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-xs font-black ${isMe ? 'bg-primary text-white' : 'bg-slate-200 text-slate-600'}`}>
+                                                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl text-xs font-black ${isMe ? 'bg-primary text-white' : 'bg-slate-200 text-slate-800'}`}>
                                                                 {employeeName.substring(0, 1).toUpperCase()}
                                                             </div>
                                                             <div className="min-w-0">
@@ -1689,15 +1705,15 @@ const MyWork = () => {
                                                             )}
                                                             <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-100 bg-white p-3 text-xs">
                                                                 <div>
-                                                                    <span className="block font-black text-slate-400">Check-in</span>
+                                                                    <span className="block font-black text-slate-800">Check-in</span>
                                                                     <span className="mt-1 block font-black text-slate-800">{formatTime(assignment.checkInAt)}</span>
                                                                 </div>
                                                                 <div>
-                                                                    <span className="block font-black text-slate-400">Check-out</span>
+                                                                    <span className="block font-black text-slate-800">Check-out</span>
                                                                     <span className="mt-1 block font-black text-slate-800">{formatTime(assignment.checkOutAt)}</span>
                                                                 </div>
                                                                 <div>
-                                                                    <span className="block font-black text-slate-400">Đã làm</span>
+                                                                    <span className="block font-black text-slate-800">Đã làm</span>
                                                                     <span className="mt-1 block font-black text-slate-800">{formatMinutes(assignment.workedMinutes || 0)}</span>
                                                                 </div>
                                                             </div>
@@ -1735,17 +1751,17 @@ const MyWork = () => {
                         <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-slate-50 p-6">
                             <div>
                                 <h3 className="text-xl font-black tracking-tight text-slate-950">Nhường ca làm việc</h3>
-                                <p className="mt-1 text-sm font-medium leading-relaxed text-slate-500">
+                                <p className="mt-1 text-sm font-medium leading-relaxed text-slate-700">
                                     Nếu đồng nghiệp từ chối hoặc yêu cầu hết hạn, ca làm việc vẫn thuộc về bạn.
                                 </p>
                             </div>
-                            <button type="button" onClick={closePassModal} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200 transition hover:bg-slate-100">
+                            <button type="button" onClick={closePassModal} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-100">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>
                         <div className="space-y-4 p-6">
                             <label className="block">
-                                <span className="text-xs font-black text-slate-500">Chọn đồng nghiệp</span>
+                                <span className="text-xs font-black text-slate-700">Chọn đồng nghiệp</span>
                                 <select
                                     value={passModal.toEmployeeUserId}
                                     onChange={(event) => setPassModal((prev) => ({ ...prev, toEmployeeUserId: event.target.value }))}
@@ -1759,7 +1775,7 @@ const MyWork = () => {
                                 </select>
                             </label>
                             <label className="block">
-                                <span className="text-xs font-black text-slate-500">Lý do</span>
+                                <span className="text-xs font-black text-slate-700">Lý do</span>
                                 <textarea
                                     value={passModal.reason}
                                     onChange={(event) => setPassModal((prev) => ({ ...prev, reason: event.target.value }))}

@@ -16,6 +16,8 @@ const EmployerBranches = () => {
     phone: ''
   });
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [companyAddress, setCompanyAddress] = useState(null);
   const token = localStorage.getItem('token');
 
@@ -76,19 +78,20 @@ const EmployerBranches = () => {
     }
   };
 
-  const handleDeleteBranch = async (branchId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa chi nhánh này? Thao tác này không thể hoàn tác.')) {
-      return;
-    }
-
+  const executeDeleteBranch = async () => {
+    if (!confirmDeleteId) return;
+    setIsDeleting(true);
     try {
-      await api.delete(`/branches/${branchId}`, {
+      await api.delete(`/branches/${confirmDeleteId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Đã xóa chi nhánh thành công.');
       fetchBranches();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Không thể xóa chi nhánh.');
+    } finally {
+      setIsDeleting(false);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -132,11 +135,12 @@ const EmployerBranches = () => {
   };
 
   return (
+    <>
     <div className="grid xl:grid-cols-[360px_minmax(0,1fr)] gap-6 min-w-0">
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-5 sm:p-6 space-y-4">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Chi nhánh</h2>
-          <p className="text-sm text-slate-500 mt-1">Tạo cửa hàng/địa điểm trước khi gửi lời mời nhận việc.</p>
+          <p className="text-sm text-slate-700 mt-1">Tạo cửa hàng/địa điểm trước khi gửi lời mời nhận việc.</p>
         </div>
 
         <input
@@ -199,9 +203,9 @@ const EmployerBranches = () => {
           <h3 className="text-lg font-bold text-slate-800">Địa điểm của bạn</h3>
         </div>
         {loading ? (
-          <div className="p-10 text-center text-slate-400">Đang tải chi nhánh...</div>
+          <div className="p-10 text-center text-slate-800">Đang tải chi nhánh...</div>
         ) : branches.length === 0 ? (
-          <div className="p-10 text-center text-slate-400">Chưa có chi nhánh nào.</div>
+          <div className="p-10 text-center text-slate-800">Chưa có chi nhánh nào.</div>
         ) : (
           <div className="divide-y divide-slate-100">
             {branches.map(branch => (
@@ -212,24 +216,24 @@ const EmployerBranches = () => {
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(branch.address)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-slate-500 hover:text-primary hover:underline truncate block"
+                    className="text-sm text-slate-700 hover:text-primary hover:underline truncate block"
                     title="Xem vị trí & Chỉ đường trên Google Maps"
                   >
                     {branch.address}
                   </a>
-                  {branch.phone && <p className="text-xs text-slate-400 mt-0.5">{branch.phone}</p>}
+                  {branch.phone && <p className="text-xs text-slate-800 mt-0.5">{branch.phone}</p>}
                 </div>
                 <div className="flex items-center gap-3 self-start md:self-center flex-shrink-0">
                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                     branch.isActive
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                      : 'bg-slate-50 text-slate-500 border-slate-100'
+                      : 'bg-slate-50 text-slate-700 border-slate-100'
                   }`}>
                     {branch.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
                   </span>
                   <button
-                    onClick={() => handleDeleteBranch(branch.branchId)}
-                    className="h-9 w-9 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 active:bg-rose-100 transition-all flex items-center justify-center hover:scale-105 duration-200"
+                    onClick={() => setConfirmDeleteId(branch.branchId)}
+                    className="h-9 w-9 rounded-xl text-slate-800 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-100 active:bg-rose-100 transition-all flex items-center justify-center hover:scale-105 duration-200"
                     title="Xóa chi nhánh"
                   >
                     <span className="material-symbols-outlined !text-xl">delete</span>
@@ -241,6 +245,40 @@ const EmployerBranches = () => {
         )}
       </section>
     </div>
+
+      {/* Confirm Delete Modal */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-4 mx-auto">
+                <span className="material-symbols-outlined !text-[24px]">delete</span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 text-center mb-2">Xóa chi nhánh này?</h3>
+              <p className="text-sm text-slate-600 text-center">
+                Bạn có chắc chắn muốn xóa chi nhánh này không? Thao tác này không thể hoàn tác.
+              </p>
+            </div>
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-200 bg-slate-100 transition-colors disabled:opacity-50"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={executeDeleteBranch}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? 'Đang xóa...' : 'Xóa chi nhánh'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

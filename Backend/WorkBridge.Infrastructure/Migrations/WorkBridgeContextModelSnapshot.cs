@@ -348,6 +348,10 @@ namespace WorkBridge.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<string>("BusinessLicenseUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("CompanyName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -380,6 +384,17 @@ namespace WorkBridge.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("Active");
+
+                    b.Property<string>("TaxId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasDefaultValue("Pending");
 
                     b.HasKey("EmployerId")
                         .HasName("PK__Employer__CA44526143C6B38D");
@@ -761,6 +776,9 @@ namespace WorkBridge.Infrastructure.Migrations
 
                     b.Property<int?>("Vacancies")
                         .HasColumnType("int");
+
+                    b.Property<string>("WorkingHours")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("JobPostId")
                         .HasName("PK__JobPosts__57689C3A02B54011");

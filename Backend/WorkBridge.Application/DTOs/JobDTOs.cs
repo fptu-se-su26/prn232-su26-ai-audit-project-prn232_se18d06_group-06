@@ -20,6 +20,7 @@ namespace WorkBridge.Application.DTOs
         public string Description { get; set; } = null!;
         public string? Requirements { get; set; }
         public string? Benefits { get; set; }
+        public string? WorkingHours { get; set; }
         public DateTime? ApplicationDeadline { get; set; }
         public string? Position { get; set; }
         public int? Vacancies { get; set; }
@@ -32,6 +33,7 @@ namespace WorkBridge.Application.DTOs
         public int EmployerReputationScore { get; set; } = 100;
         public int EmployerReportCount { get; set; }
         public string EmployerStatus { get; set; } = "Active";
+        public string? CompanyDescription { get; set; }
         public List<ShiftResponse> Shifts { get; set; } = new();
     }
 

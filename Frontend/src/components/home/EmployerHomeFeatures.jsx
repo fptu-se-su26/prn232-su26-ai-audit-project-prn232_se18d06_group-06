@@ -1,212 +1,207 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export default function EmployerHomeFeatures() {
   const navigate = useNavigate();
 
   return (
-    <div className="home-employer-sections bg-slate-50/50">
-      {/* ── 1. Core Advantages Section ── */}
-      <section className="py-20 bg-white border-y border-slate-100">
+    <div className="home-employer-sections">
+
+
+      {/* ── Tính năng nổi bật — alternating layout ── */}
+
+
+      {/* Feature A: Tuyển dụng — image right */}
+      <section className="relative min-h-[520px] flex items-center overflow-hidden bg-slate-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Text */}
+            <div>
+              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-600 text-xs font-black rounded-full uppercase tracking-widest mb-4">Tuyển dụng</span>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-6 leading-tight">
+                Tiếp cận Hàng Ngàn Sinh Viên Chỉ Trong Vài Phút
+              </h2>
+              <p className="text-slate-600 text-lg leading-relaxed mb-8">
+                Chỉ cần đăng tin tuyển dụng, hệ thống AI sẽ tự động phân phối đến đúng sinh viên có kỹ năng và lịch rảnh phù hợp trong bán kính bạn chọn.
+              </p>
+              <ul className="space-y-3 mb-8">
+                {['Lọc hồ sơ tự động theo kỹ năng & kinh nghiệm', 'Duyệt ứng viên chỉ với 1 nút bấm', 'Thông báo real-time khi có đơn mới'].map((t, i) => (
+                  <li key={i} className="flex items-center gap-3 text-slate-700 font-medium">
+                    <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                      <span className="material-symbols-outlined !text-[13px] text-white">check</span>
+                    </span>
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={() => navigate('/employer-dashboard')} className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors">
+                Đăng tin tuyển dụng ngay
+                <span className="material-symbols-outlined !text-[18px]">arrow_forward</span>
+              </button>
+            </div>
+
+            {/* Image */}
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[380px] lg:h-[440px]">
+              <img
+                src="https://images.unsplash.com/photo-1573496799515-eebbb63814f2?auto=format&fit=crop&q=80&w=800"
+                alt="Sinh viên Việt Nam tìm việc"
+                className="w-full h-full object-cover"
+              />
+              {/* Floating badge */}
+              <div className="absolute bottom-6 left-6 bg-white rounded-2xl shadow-xl px-5 py-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+                  <span className="material-symbols-outlined !text-xl text-white">person_check</span>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">Vừa nhận được</p>
+                  <p className="text-sm font-black text-slate-900">12 hồ sơ phù hợp</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature B: Ca làm & Chấm công — image left, dark bg */}
+      <section className="relative overflow-hidden">
+        {/* Background photo */}
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1559526324-593bc073d938?auto=format&fit=crop&q=80&w=1920"
+            alt="Quán cà phê Việt Nam"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-slate-900/30" />
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Text */}
+            <div>
+              <span className="inline-block px-3 py-1 bg-sky-500/20 text-sky-300 text-xs font-black rounded-full uppercase tracking-widest mb-4 border border-sky-500/30">Ca làm & Chấm công</span>
+              <h2 className="text-3xl md:text-4xl font-black text-white mb-6 leading-tight">
+                Quản Lý Lịch Làm Việc Thông Minh, Không Còn Nhầm Lẫn
+              </h2>
+              <p className="text-slate-300 text-lg leading-relaxed mb-8">
+                Nhân viên tự đăng ký ca rảnh, hệ thống tự động xếp ca tối ưu, tránh trùng lịch hoàn toàn. Chấm công bằng GPS hoặc QR Code, chính xác đến từng phút.
+              </p>
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                {[
+                  { icon: 'location_on', label: 'Chấm công GPS' },
+                  { icon: 'qr_code_scanner', label: 'Chấm công QR' },
+                  { icon: 'schedule', label: 'Xếp ca tự động' },
+                  { icon: 'notifications', label: 'Nhắc lịch real-time' },
+                ].map((f, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/10">
+                    <span className="material-symbols-outlined !text-xl text-sky-400">{f.icon}</span>
+                    <span className="text-white text-sm font-semibold">{f.label}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => navigate('/employer-dashboard?tab=shifts')} className="inline-flex items-center gap-2 px-6 py-3 bg-sky-500 text-white font-bold rounded-xl hover:bg-sky-600 transition-colors">
+                Xem tính năng Ca làm
+                <span className="material-symbols-outlined !text-[18px]">arrow_forward</span>
+              </button>
+            </div>
+
+            {/* Right spacer — shows photo through bg */}
+            <div className="hidden lg:block" />
+          </div>
+        </div>
+      </section>
+
+      {/* Feature C: Lương — image right, light bg */}
+      <section className="bg-white py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-800 mb-4">
-              Lợi thế cạnh tranh
-            </h2>
-            <p className="text-lg font-medium text-slate-500">
-              Công nghệ tiên phong giúp doanh nghiệp tối ưu chi phí và nguồn lực nhân sự.
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="p-8 rounded-[2rem] bg-sky-50/50 border border-sky-100/50 hover:bg-sky-50 transition-colors">
-              <div className="w-16 h-16 mx-auto bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-sky-100">
-                <span className="material-symbols-outlined !text-3xl text-sky-500">verified_user</span>
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-3">Ứng viên xác thực 100%</h3>
-              <p className="text-slate-500 leading-relaxed text-sm font-medium">Hồ sơ sinh viên được xác minh danh tính rõ ràng, đảm bảo nguồn nhân lực uy tín và an toàn.</p>
-            </div>
-            
-            <div className="p-8 rounded-[2rem] bg-indigo-50/50 border border-indigo-100/50 hover:bg-indigo-50 transition-colors">
-              <div className="w-16 h-16 mx-auto bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-indigo-100">
-                <span className="material-symbols-outlined !text-3xl text-indigo-500">memory</span>
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-3">Công nghệ lõi AI</h3>
-              <p className="text-slate-500 leading-relaxed text-sm font-medium">Hệ thống matching ứng viên tự động, giúp giảm thiểu 80% thời gian lọc hồ sơ và phỏng vấn thủ công.</p>
-            </div>
-            
-            <div className="p-8 rounded-[2rem] bg-emerald-50/50 border border-emerald-100/50 hover:bg-emerald-50 transition-colors">
-              <div className="w-16 h-16 mx-auto bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-emerald-100">
-                <span className="material-symbols-outlined !text-3xl text-emerald-500">hub</span>
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-3">Hệ sinh thái khép kín</h3>
-              <p className="text-slate-500 leading-relaxed text-sm font-medium">Tích hợp đầy đủ tính năng: Đăng tin, Xếp ca tự động, Chấm công, và Trả lương trên một nền tảng.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── 2. Bento Grid Features ── */}
-      <section className="py-20 lg:py-28">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-800 mb-4">
-              Nền Tảng Quản Trị Nhân Sự Toàn Diện
-            </h2>
-            <p className="text-lg font-medium text-slate-500">
-              Cung cấp các công cụ tiên tiến giúp bạn tuyển dụng nhanh chóng và quản lý đội ngũ nhân viên part-time dễ dàng hơn bao giờ hết.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Feature 1 */}
-            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-8 lg:p-12 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
-              <div className="w-14 h-14 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6">
-                <span className="material-symbols-outlined !text-3xl text-blue-600">group_add</span>
-              </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-3">Tuyển dụng ứng viên nhanh chóng</h3>
-              <p className="text-slate-600 leading-relaxed font-medium max-w-md">
-                Thuật toán của WorkBridge tự động kết nối tin tuyển dụng của bạn với hàng ngàn sinh viên có kỹ năng và lịch rảnh phù hợp nhất.
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Text */}
+            <div>
+              <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-600 text-xs font-black rounded-full uppercase tracking-widest mb-4">Tính lương & Thanh toán</span>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-6 leading-tight">
+                Bảng Lương Tự Động, Chi Trả Nhanh Chóng Qua PayOS
+              </h2>
+              <p className="text-slate-600 text-lg leading-relaxed mb-8">
+                Không còn tính toán thủ công. Hệ thống tự động cộng giờ làm, tính lương, xuất bảng lương và hỗ trợ thanh toán trực tiếp qua ví điện tử.
               </p>
-              <div className="mt-8 flex gap-3">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100/50 text-blue-700 text-xs font-bold border border-blue-200/50">
-                  <span className="material-symbols-outlined !text-[14px]">check</span> Lọc hồ sơ AI
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-100/50 text-blue-700 text-xs font-bold border border-blue-200/50">
-                  <span className="material-symbols-outlined !text-[14px]">check</span> Duyệt đơn 1-chạm
-                </span>
+              <div className="space-y-4 mb-8">
+                {[
+                  { icon: 'calculate', color: 'bg-emerald-100 text-emerald-600', title: 'Tự động tính lương theo giờ', desc: 'Dựa trên dữ liệu chấm công thực tế, không sai sót.' },
+                  { icon: 'payments', color: 'bg-blue-100 text-blue-600', title: 'Thanh toán qua PayOS', desc: 'Chuyển lương trực tiếp vào ví điện tử, ngân hàng nhân viên.' },
+                  { icon: 'description', color: 'bg-amber-100 text-amber-600', title: 'Xuất báo cáo PDF / Excel', desc: 'Lưu trữ hồ sơ lương chuẩn mực, dễ dàng kê khai thuế.' },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-4 items-start">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${item.color}`}>
+                      <span className="material-symbols-outlined !text-xl">{item.icon}</span>
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-900 text-sm">{item.title}</p>
+                      <p className="text-slate-500 text-sm">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="col-span-1 bg-white border border-slate-200 rounded-3xl p-8 lg:p-10 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center mb-6 border border-sky-100">
-                <span className="material-symbols-outlined !text-3xl text-sky-500">calendar_month</span>
-              </div>
-              <h3 className="text-xl font-black text-slate-800 mb-3">Quản lý Ca Làm & Lịch Trình</h3>
-              <p className="text-slate-500 text-sm leading-relaxed font-medium mb-6">
-                Tự động sắp xếp ca làm việc thông minh dựa trên lịch rảnh của sinh viên. Loại bỏ hoàn toàn sự trùng lặp ca.
-              </p>
-              <button onClick={() => navigate('/employer-dashboard?tab=shifts')} className="text-sky-600 font-bold text-sm inline-flex items-center gap-1 hover:gap-2 transition-all">
-                Xem tính năng <span className="material-symbols-outlined !text-base">arrow_forward</span>
+              <button onClick={() => navigate('/employer-dashboard?tab=payroll')} className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors">
+                Xem tính năng Bảng lương
+                <span className="material-symbols-outlined !text-[18px]">arrow_forward</span>
               </button>
             </div>
 
-            {/* Feature 3 */}
-            <div className="col-span-1 bg-white border border-slate-200 rounded-3xl p-8 lg:p-10 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mb-6 border border-green-100">
-                <span className="material-symbols-outlined !text-3xl text-green-500">payments</span>
+            {/* Image */}
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl h-[400px] lg:h-[460px]">
+              <img
+                src="https://images.unsplash.com/photo-1553484771-371a605b060b?auto=format&fit=crop&q=80&w=800"
+                alt="Bảng lương và tài chính"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-6 right-6 bg-emerald-500 rounded-2xl shadow-xl px-5 py-4 text-white">
+                <p className="text-xs font-semibold opacity-80 mb-0.5">Bảng lương tháng 6</p>
+                <p className="text-2xl font-black">Đã gửi ✓</p>
               </div>
-              <h3 className="text-xl font-black text-slate-800 mb-3">Chấm Công & Tính Lương</h3>
-              <p className="text-slate-500 text-sm leading-relaxed font-medium mb-6">
-                Chấm công GPS hoặc QR Code. Bảng lương được tự động cập nhật theo thời gian thực và tích hợp chi trả PayOS.
-              </p>
-              <button onClick={() => navigate('/employer-dashboard?tab=payroll')} className="text-green-600 font-bold text-sm inline-flex items-center gap-1 hover:gap-2 transition-all">
-                Xem tính năng <span className="material-symbols-outlined !text-base">arrow_forward</span>
-              </button>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-3xl p-8 lg:p-12 shadow-lg relative overflow-hidden group">
-              <div className="w-14 h-14 bg-white/10 rounded-2xl backdrop-blur-md flex items-center justify-center mb-6 border border-white/10">
-                <span className="material-symbols-outlined !text-3xl text-white">query_stats</span>
-              </div>
-              <h3 className="text-2xl font-black text-white mb-3">Báo Cáo Phân Tích Chuyên Sâu</h3>
-              <p className="text-slate-400 leading-relaxed font-medium max-w-md">
-                Theo dõi hiệu suất nhân viên, chi phí lương và thống kê biến động nhân sự với các biểu đồ trực quan, giúp bạn đưa ra quyết định kinh doanh tốt hơn.
-              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── 3. How It Works ── */}
-      <section className="py-20 bg-white border-t border-slate-100">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-800 mb-4">
-              Cách Thức Hoạt Động
-            </h2>
-            <p className="text-lg font-medium text-slate-500">
-              Quy trình tuyển dụng và quản lý nhân sự được đơn giản hóa tối đa với WorkBridge.
-            </p>
-          </div>
+      {/* ── 4. VIP Call-to-action — full photo background ── */}
+      <section className="relative min-h-[500px] flex items-center">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&q=80&w=1920"
+            alt="Team Việt Nam họp"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-600/90 to-orange-700/90" />
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 relative">
-            {/* Desktop Connect Line */}
-            <div className="hidden lg:block absolute top-12 left-1/4 right-1/4 h-[2px] bg-sky-100 -z-10"></div>
-
-            <div className="relative text-center">
-              <div className="w-24 h-24 mx-auto bg-white border-4 border-sky-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                <span className="material-symbols-outlined !text-[40px] text-sky-500">post_add</span>
-              </div>
-              <h4 className="text-lg font-black text-slate-800 mb-2">1. Đăng Tin</h4>
-              <p className="text-sm font-medium text-slate-500 leading-relaxed">
-                Tạo tin tuyển dụng miễn phí trong vài phút, mô tả rõ yêu cầu ca làm.
-              </p>
-            </div>
-
-            <div className="relative text-center">
-              <div className="w-24 h-24 mx-auto bg-white border-4 border-sky-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                <span className="material-symbols-outlined !text-[40px] text-sky-500">manage_search</span>
-              </div>
-              <h4 className="text-lg font-black text-slate-800 mb-2">2. Kết Nối</h4>
-              <p className="text-sm font-medium text-slate-500 leading-relaxed">
-                Hệ thống tự động thông báo và gửi hồ sơ ứng viên phù hợp nhất đến bạn.
-              </p>
-            </div>
-
-            <div className="relative text-center">
-              <div className="w-24 h-24 mx-auto bg-white border-4 border-sky-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                <span className="material-symbols-outlined !text-[40px] text-sky-500">handshake</span>
-              </div>
-              <h4 className="text-lg font-black text-slate-800 mb-2">3. Tuyển Dụng</h4>
-              <p className="text-sm font-medium text-slate-500 leading-relaxed">
-                Phỏng vấn và chốt nhận ứng viên ngay trên ứng dụng, đưa vào hệ thống nhân sự.
-              </p>
-            </div>
-
-            <div className="relative text-center">
-              <div className="w-24 h-24 mx-auto bg-white border-4 border-sky-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-                <span className="material-symbols-outlined !text-[40px] text-sky-500">auto_graph</span>
-              </div>
-              <h4 className="text-lg font-black text-slate-800 mb-2">4. Quản Lý</h4>
-              <p className="text-sm font-medium text-slate-500 leading-relaxed">
-                Quản lý ca làm, theo dõi chấm công và tính lương thưởng dễ dàng.
-              </p>
-            </div>
+        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center w-full">
+          <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/20 text-white text-xs font-black tracking-widest uppercase mb-8 border border-white/30 backdrop-blur-sm">
+            <span className="material-symbols-outlined !text-[16px]">workspace_premium</span>
+            WorkBridge Business VIP
+          </span>
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-6 leading-tight">
+            Mở Khóa Toàn Bộ <br className="hidden md:block" />Sức Mạnh Quản Trị
+          </h2>
+          <p className="text-xl text-white/85 font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
+            Ghim tin không giới hạn, xếp ca AI siêu tốc, báo cáo nâng cao và hỗ trợ 1-1 từ chuyên gia nhân sự WorkBridge.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <button
+              onClick={() => navigate('/employer-dashboard?tab=vip')}
+              className="group h-14 px-10 rounded-2xl bg-white text-amber-600 text-base font-black hover:scale-105 hover:shadow-2xl transition-all flex items-center justify-center gap-2"
+            >
+              Nâng cấp VIP ngay
+              <span className="material-symbols-outlined !text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </button>
+            <button
+              onClick={() => navigate('/employer-dashboard')}
+              className="h-14 px-10 rounded-2xl bg-white/20 backdrop-blur-sm text-white text-base font-bold hover:bg-white/30 border border-white/30 transition-all flex items-center justify-center gap-2"
+            >
+              Dùng thử miễn phí
+            </button>
           </div>
         </div>
       </section>
 
-      {/* ── 4. VIP Call To Action ── */}
-      <section className="py-20 lg:py-28 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-[1200px] mx-auto bg-gradient-to-br from-amber-500 to-orange-600 rounded-[2rem] lg:rounded-[3rem] p-10 lg:p-16 text-center text-white relative overflow-hidden shadow-2xl shadow-amber-500/20">
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>
-          <div className="absolute w-96 h-96 bg-white/20 rounded-full blur-[80px] -top-20 -left-20"></div>
-          <div className="absolute w-96 h-96 bg-black/10 rounded-full blur-[80px] -bottom-20 -right-20"></div>
-          
-          <div className="relative z-10">
-            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md text-white text-sm font-black tracking-widest uppercase mb-6 border border-white/30 shadow-sm">
-              <span className="material-symbols-outlined !text-[18px]">workspace_premium</span>
-              WorkBridge Business VIP
-            </span>
-            <h2 className="text-3xl md:text-5xl font-black mb-6 leading-tight">
-              Mở khóa toàn bộ sức mạnh AI<br className="hidden md:block"/> để quản trị nhân sự tối ưu
-            </h2>
-            <p className="text-lg font-medium text-white/90 mb-10 max-w-2xl mx-auto">
-              Ghim tin tuyển dụng không giới hạn, sử dụng thuật toán xếp ca tự động trong 2 giây và tích hợp thanh toán lương qua thẻ tín dụng doanh nghiệp.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <button onClick={() => navigate('/employer-dashboard?tab=vip')} className="h-[60px] px-10 rounded-2xl bg-white text-amber-600 text-[15px] font-black hover:scale-105 hover:shadow-xl transition-all flex items-center justify-center gap-2">
-                Nâng cấp VIP ngay
-                <span className="material-symbols-outlined !text-xl">arrow_forward</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

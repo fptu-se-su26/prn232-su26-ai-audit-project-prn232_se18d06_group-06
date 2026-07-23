@@ -101,6 +101,7 @@ namespace WorkBridge.Application.Services
                     Description = j.Description,
                     Requirements = j.Requirements,
                     Benefits = j.Benefits,
+                    WorkingHours = j.WorkingHours,
                     ApplicationDeadline = j.ApplicationDeadline,
                     Position = j.Position,
                     Vacancies = j.Vacancies,
@@ -113,6 +114,7 @@ namespace WorkBridge.Application.Services
                     EmployerReputationScore = j.Employer.ReputationScore,
                     EmployerReportCount = j.Employer.ReportCount,
                     EmployerStatus = j.Employer.Status,
+                    CompanyDescription = j.Employer.Description,
                     Shifts = j.Shifts.Select(s => new ShiftResponse
                     {
                         ShiftId = s.ShiftId,
@@ -163,6 +165,7 @@ namespace WorkBridge.Application.Services
                     Description = j.Description,
                     Requirements = j.Requirements,
                     Benefits = j.Benefits,
+                    WorkingHours = j.WorkingHours,
                     ApplicationDeadline = j.ApplicationDeadline,
                     Position = j.Position,
                     Vacancies = j.Vacancies,
@@ -175,6 +178,7 @@ namespace WorkBridge.Application.Services
                     EmployerReputationScore = j.Employer.ReputationScore,
                     EmployerReportCount = j.Employer.ReportCount,
                     EmployerStatus = j.Employer.Status,
+                    CompanyDescription = j.Employer.Description,
                     Shifts = j.Shifts.Select(s => new ShiftResponse
                     {
                         ShiftId = s.ShiftId,
