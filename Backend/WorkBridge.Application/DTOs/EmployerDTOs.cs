@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace WorkBridge.Application.DTOs
 {
@@ -24,7 +25,40 @@ namespace WorkBridge.Application.DTOs
     public class SubmitVerificationRequest
     {
         public string TaxId { get; set; } = null!;
+        public string LegalCompanyName { get; set; } = null!;
+        public string RegistrationAddress { get; set; } = null!;
+        public string RepresentativeName { get; set; } = null!;
+        public string? RepresentativeTitle { get; set; }
+        public string? SubmissionNote { get; set; }
         public Microsoft.AspNetCore.Http.IFormFile BusinessLicenseFile { get; set; } = null!;
+        public Microsoft.AspNetCore.Http.IFormFile? SupportingDocumentFile { get; set; }
+    }
+
+    public class EmployerVerificationResponse
+    {
+        public int VerificationId { get; set; }
+        public int EmployerId { get; set; }
+        public string TaxId { get; set; } = string.Empty;
+        public string LegalCompanyName { get; set; } = string.Empty;
+        public string RegistrationAddress { get; set; } = string.Empty;
+        public string RepresentativeName { get; set; } = string.Empty;
+        public string? RepresentativeTitle { get; set; }
+        public string BusinessLicenseUrl { get; set; } = string.Empty;
+        public string? SupportingDocumentUrl { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string? SubmissionNote { get; set; }
+        public string? ReviewNote { get; set; }
+        public DateTime SubmittedAt { get; set; }
+        public DateTime? ReviewedAt { get; set; }
+    }
+
+    public class EmployerVerificationOverviewResponse
+    {
+        public string CurrentStatus { get; set; } = "Unverified";
+        public bool CanSubmit { get; set; }
+        public string? BlockingReason { get; set; }
+        public EmployerVerificationResponse? LatestSubmission { get; set; }
+        public List<EmployerVerificationResponse> History { get; set; } = new();
     }
 
     public class UpdateEmployerProfileRequest
