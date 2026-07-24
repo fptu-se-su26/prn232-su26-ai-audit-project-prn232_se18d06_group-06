@@ -28,7 +28,7 @@ namespace WorkBridge.Application.Services
             _hubNotifier = hubNotifier;
         }
 
-        public async Task<IEnumerable<ConversationResponse>> GetConversationsAsync(int userId)
+        public async Task<IEnumerable<ConversationResponse>> GetConversationsAsync(int userId, string? search = null, bool includeArchived = false)
         {
             var sentTo = await _context.Messages
                 .Where(m => m.SenderId == userId)
@@ -43,6 +43,9 @@ namespace WorkBridge.Application.Services
                 .ToListAsync();
 
             var contactIds = sentTo.Union(receivedFrom).Distinct().ToList();
+            var preferences = await _context.ConversationPreferences
+                .Where(p => p.UserId == userId && contactIds.Contains(p.ContactId))
+                .ToDictionaryAsync(p => p.ContactId);
             var conversations = new List<ConversationResponse>();
 
             foreach (var contactId in contactIds)
@@ -58,6 +61,12 @@ namespace WorkBridge.Application.Services
                 var unreadCount = await _context.Messages
                     .CountAsync(m => m.SenderId == contactId && m.ReceiverId == userId && !m.IsRead);
 
+                preferences.TryGetValue(contactId, out var preference);
+                if (!includeArchived && preference?.IsArchived == true) continue;
+                if (!string.IsNullOrWhiteSpace(search)
+                    && !contact.FullName.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)
+                    && !(lastMessage?.Content?.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase) ?? false)) continue;
+
                 conversations.Add(new ConversationResponse
                 {
                     ContactId = contactId,
@@ -67,11 +76,14 @@ namespace WorkBridge.Application.Services
                     LastMessageAt = lastMessage?.SentAt,
                     UnreadCount = unreadCount,
                     IsOnline = OnlineUsers.TryGetValue(contactId, out var connections) && connections.Count > 0,
-                    LastSeenAt = LastSeenTimes.TryGetValue(contactId, out var seenTime) ? seenTime : null
+                    LastSeenAt = LastSeenTimes.TryGetValue(contactId, out var seenTime) ? seenTime : null,
+                    IsPinned = preference?.IsPinned ?? false,
+                    IsArchived = preference?.IsArchived ?? false,
+                    IsMuted = preference?.IsMuted ?? false
                 });
             }
 
-            return conversations.OrderByDescending(c => c.LastMessageAt);
+            return conversations.OrderByDescending(c => c.IsPinned).ThenByDescending(c => c.LastMessageAt);
         }
 
         private static string BuildConversationPreview(Message? message)
@@ -238,6 +250,52 @@ namespace WorkBridge.Application.Services
         {
             return await _context.Messages
                 .CountAsync(m => m.ReceiverId == userId && !m.IsRead);
+        }
+
+        public async Task<bool> UpdateConversationPreferenceAsync(int userId, int contactId, UpdateConversationPreferenceRequest request)
+        {
+            if (contactId == userId || !await _context.Users.AnyAsync(u => u.UserId == contactId && !u.IsDeleted)) return false;
+
+            var preference = await _context.ConversationPreferences
+                .FirstOrDefaultAsync(p => p.UserId == userId && p.ContactId == contactId);
+            if (preference == null)
+            {
+                preference = new ConversationPreference { UserId = userId, ContactId = contactId };
+                await _context.ConversationPreferences.AddAsync(preference);
+            }
+
+            if (request.IsPinned.HasValue) preference.IsPinned = request.IsPinned.Value;
+            if (request.IsArchived.HasValue) preference.IsArchived = request.IsArchived.Value;
+            if (request.IsMuted.HasValue) preference.IsMuted = request.IsMuted.Value;
+            preference.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<PagedResult<MessageResponse>> SearchMessagesAsync(int userId, string query, int page = 1, int pageSize = 30)
+        {
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var term = query?.Trim();
+            if (string.IsNullOrWhiteSpace(term)) return new PagedResult<MessageResponse> { Page = page };
+
+            var messagesQuery = _context.Messages.AsNoTracking().Include(m => m.Sender)
+                .Where(m => (m.SenderId == userId || m.ReceiverId == userId) && m.Content.Contains(term));
+            var totalItems = await messagesQuery.CountAsync();
+            var messages = await messagesQuery.OrderByDescending(m => m.SentAt)
+                .Skip((page - 1) * pageSize).Take(pageSize)
+                .Select(m => new MessageResponse
+                {
+                    MessageId = m.MessageId, SenderId = m.SenderId, SenderName = m.Sender.FullName,
+                    SenderAvatarUrl = m.Sender.AvatarUrl, ReceiverId = m.ReceiverId, Content = m.Content,
+                    MessageType = m.MessageType, InterviewId = m.InterviewId, IsRead = m.IsRead, SentAt = m.SentAt
+                }).ToListAsync();
+
+            return new PagedResult<MessageResponse>
+            {
+                Items = messages, TotalItems = totalItems, Page = page,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize)
+            };
         }
 
         private async Task<Dictionary<int, InterviewMessageSummary>> GetInterviewSummariesAsync(IEnumerable<int> interviewIds)

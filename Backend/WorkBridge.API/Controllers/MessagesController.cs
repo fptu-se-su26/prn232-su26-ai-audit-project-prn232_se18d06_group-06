@@ -28,11 +28,24 @@ namespace WorkBridge.API.Controllers
         }
 
         [HttpGet("conversations")]
-        public async Task<IActionResult> GetConversations()
+        public async Task<IActionResult> GetConversations([FromQuery] string? search = null, [FromQuery] bool includeArchived = false)
         {
             var userId = GetUserId();
-            var conversations = await _messageService.GetConversationsAsync(userId);
+            var conversations = await _messageService.GetConversationsAsync(userId, search, includeArchived);
             return Ok(conversations);
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] string query, [FromQuery] int page = 1, [FromQuery] int pageSize = 30)
+        {
+            return Ok(await _messageService.SearchMessagesAsync(GetUserId(), query, page, pageSize));
+        }
+
+        [HttpPatch("conversations/{contactId}/preference")]
+        public async Task<IActionResult> UpdatePreference(int contactId, [FromBody] UpdateConversationPreferenceRequest request)
+        {
+            var updated = await _messageService.UpdateConversationPreferenceAsync(GetUserId(), contactId, request);
+            return updated ? Ok() : NotFound();
         }
 
         [HttpGet("{contactId}")]
