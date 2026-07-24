@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { signalRService } from '../services/signalrService';
 import ReviewModal from '../components/shared/ReviewModal';
 import Pagination from '../components/shared/Pagination';
+import { ErrorState, LoadingState } from '../components/shared/AsyncState';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -12,6 +13,7 @@ const MyApplications = () => {
   const [applications, setApplications] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedForReview, setSelectedForReview] = useState(null);
   const token = localStorage.getItem('token');
@@ -44,6 +46,8 @@ const MyApplications = () => {
   }, [applications.length, currentPage]);
 
   const fetchApplications = async () => {
+    setLoading(true);
+    setLoadError(null);
     try {
       const response = await api.get('/application/my', {
         headers: { Authorization: `Bearer ${token}` }
@@ -51,6 +55,7 @@ const MyApplications = () => {
       setApplications(response.data);
     } catch (error) {
       console.error('Error fetching applications:', error);
+      setLoadError(error);
       toast.error('Không thể tải đơn ứng tuyển.');
     } finally {
       setLoading(false);
@@ -100,7 +105,7 @@ const MyApplications = () => {
   if (loading) {
     return (
       <div className="applicant-shell flex min-h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+        <LoadingState title="Đang tải đơn ứng tuyển" rows={5} />
       </div>
     );
   }
@@ -126,7 +131,9 @@ const MyApplications = () => {
       </section>
 
       <main className="applicant-page-content mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        {applications.length === 0 ? (
+        {loadError ? (
+          <div className="applicant-empty-card"><ErrorState error={loadError} onRetry={fetchApplications} /></div>
+        ) : applications.length === 0 ? (
           <div className="applicant-empty-card animate-fadeInUp p-12 text-center sm:p-20">
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-sky-50 text-primary">
               <span className="material-symbols-outlined !text-4xl">folder_open</span>

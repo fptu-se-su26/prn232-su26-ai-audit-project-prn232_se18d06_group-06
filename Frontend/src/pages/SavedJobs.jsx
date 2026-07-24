@@ -4,6 +4,7 @@ import api from '../services/api';
 import toast from 'react-hot-toast';
 import JobCard from '../components/jobs/JobCard';
 import Pagination from '../components/shared/Pagination';
+import { ErrorState, LoadingState } from '../components/shared/AsyncState';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -11,6 +12,7 @@ export default function SavedJobs() {
   const [savedJobs, setSavedJobs] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -28,6 +30,8 @@ export default function SavedJobs() {
   }, [savedJobs.length, currentPage]);
 
   const fetchSavedJobs = async () => {
+    setLoading(true);
+    setLoadError(null);
     try {
       const response = await api.get('/savedjobs', {
         headers: { Authorization: `Bearer ${token}` }
@@ -35,6 +39,7 @@ export default function SavedJobs() {
       setSavedJobs(response.data);
     } catch (error) {
       console.error('Error fetching saved jobs:', error);
+      setLoadError(error);
       if (error.response?.status === 401) {
         toast.error('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
       } else {
@@ -61,7 +66,7 @@ export default function SavedJobs() {
   if (loading) {
     return (
       <div className="applicant-shell flex min-h-screen items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+        <LoadingState title="Đang tải việc đã lưu" rows={4} />
       </div>
     );
   }
@@ -87,7 +92,9 @@ export default function SavedJobs() {
       </section>
 
       <main className="applicant-page-content mx-auto w-full max-w-[1440px] px-4 sm:px-6 lg:px-8">
-        {savedJobs.length === 0 ? (
+        {loadError ? (
+          <div className="applicant-empty-card"><ErrorState error={loadError} onRetry={fetchSavedJobs} /></div>
+        ) : savedJobs.length === 0 ? (
           <div className="applicant-empty-card animate-fadeInUp p-12 text-center sm:p-20">
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-sky-50 text-primary">
               <span className="material-symbols-outlined !text-4xl">bookmark_border</span>
