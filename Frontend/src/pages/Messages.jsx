@@ -30,7 +30,8 @@ const parseVND = (value) => {
 const FILTERS = [
     { id: 'all', label: 'Tất cả', icon: 'inbox' },
     { id: 'unread', label: 'Chưa đọc', icon: 'mark_email_unread' },
-    { id: 'pinned', label: 'Đã ghim', icon: 'keep' }
+    { id: 'pinned', label: 'Đã ghim', icon: 'keep' },
+    { id: 'archived', label: 'Lưu trữ', icon: 'archive' }
 ];
 
 const EMPLOYER_QUICK_REPLIES = [
@@ -217,14 +218,7 @@ const Messages = () => {
     const userRole = localStorage.getItem('role');
     const isEmployer = userRole === 'Employer';
     const isApplicant = userRole === 'Applicant';
-    const pinnedStorageKey = `workbridge:pinned-chat:${currentUserId}`;
-    const [pinnedIds, setPinnedIds] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem(pinnedStorageKey) || '[]');
-        } catch {
-            return [];
-        }
-    });
+    const pinnedIds = useMemo(() => conversations.filter(conv => conv.isPinned).map(conv => Number(conv.contactId)), [conversations]);
 
     const messagesContainerRef = useRef(null);
     const lastMessageCountRef = useRef(0);
@@ -262,6 +256,8 @@ const Messages = () => {
                 normalizeText(conv.lastMessage).includes(query);
 
             if (!matchesQuery) return false;
+            if (activeFilter === 'archived') return conv.isArchived;
+            if (conv.isArchived) return false;
             if (activeFilter === 'unread') return Number(conv.unreadCount || 0) > 0;
             if (activeFilter === 'pinned') return pinnedIds.includes(Number(conv.contactId));
             return true;
@@ -269,9 +265,10 @@ const Messages = () => {
     }, [activeFilter, pinnedIds, searchTerm, sortedConversations]);
 
     const filterCounts = useMemo(() => ({
-        all: conversations.length,
-        unread: conversations.filter(conv => Number(conv.unreadCount || 0) > 0).length,
-        pinned: conversations.filter(conv => pinnedIds.includes(Number(conv.contactId))).length
+        all: conversations.filter(conv => !conv.isArchived).length,
+        unread: conversations.filter(conv => !conv.isArchived && Number(conv.unreadCount || 0) > 0).length,
+        pinned: conversations.filter(conv => !conv.isArchived && conv.isPinned).length,
+        archived: conversations.filter(conv => conv.isArchived).length
     }), [conversations, pinnedIds]);
 
     const latestOffer = useMemo(() => {
@@ -299,10 +296,6 @@ const Messages = () => {
             document.body.style.overflow = previousOverflow;
         };
     }, []);
-
-    useEffect(() => {
-        localStorage.setItem(pinnedStorageKey, JSON.stringify(pinnedIds));
-    }, [pinnedIds, pinnedStorageKey]);
 
     useEffect(() => {
         if (location.state?.contactId) {
@@ -478,7 +471,7 @@ const Messages = () => {
 
     const fetchConversations = async () => {
         try {
-            const res = await api.get('/messages/conversations');
+            const res = await api.get('/messages/conversations', { params: { includeArchived: true } });
             setConversations(res.data || []);
         } catch (error) {
             console.error('Error fetching conversations:', error);
@@ -572,13 +565,20 @@ const Messages = () => {
         }
     };
 
+    const updateConversationPreference = async (contactId, changes) => {
+        try {
+            await api.patch(`/messages/conversations/${contactId}/preference`, changes);
+            setConversations(prev => prev.map(conv => Number(conv.contactId) === Number(contactId) ? { ...conv, ...changes } : conv));
+            setSelectedContact(prev => Number(prev?.contactId) === Number(contactId) ? { ...prev, ...changes } : prev);
+        } catch (error) {
+            console.error('Error updating conversation preference:', error);
+            toast.error('Không thể cập nhật hội thoại.');
+        }
+    };
+
     const togglePinned = (contactId) => {
-        const numericId = Number(contactId);
-        setPinnedIds(prev =>
-            prev.includes(numericId)
-                ? prev.filter(id => id !== numericId)
-                : [numericId, ...prev]
-        );
+        const conversation = conversations.find(conv => Number(conv.contactId) === Number(contactId));
+        updateConversationPreference(contactId, { isPinned: !conversation?.isPinned });
     };
 
     const handleInputChange = (event) => {
@@ -1106,7 +1106,7 @@ Giữ giọng văn đời thường, rõ ý, không dùng từ quá máy móc.`;
                         />
                     </div>
 
-                    <div className="mt-3 grid grid-cols-3 gap-1 rounded-lg bg-slate-100 p-1">
+                    <div className="mt-3 grid grid-cols-4 gap-1 rounded-lg bg-slate-100 p-1">
                         {FILTERS.map(filter => (
                             <button
                                 type="button"
@@ -1216,6 +1216,18 @@ Giữ giọng văn đời thường, rõ ý, không dùng từ quá máy móc.`;
                             <div className="ml-auto flex items-center gap-1.5">
                                 <button type="button" onClick={() => togglePinned(selectedContact.contactId)} title="Ghim hội thoại" className={`flex h-9 w-9 items-center justify-center rounded-lg ${pinnedIds.includes(Number(selectedContact.contactId)) ? 'bg-blue-50 text-[#1687d9]' : 'text-slate-800 hover:bg-slate-50'}`}>
                                     <span className="material-symbols-outlined !text-xl">keep</span>
+                                </button>
+                                <button type="button"
+                                    onClick={() => updateConversationPreference(selectedContact.contactId, { isMuted: !selectedContact.isMuted })}
+                                    title={selectedContact.isMuted ? 'Bật thông báo' : 'Tắt thông báo'}
+                                    className={`flex h-9 w-9 items-center justify-center rounded-lg ${selectedContact.isMuted ? 'bg-amber-50 text-amber-600' : 'text-slate-800 hover:bg-slate-50'}`}>
+                                    <span className="material-symbols-outlined !text-xl">{selectedContact.isMuted ? 'notifications_off' : 'notifications'}</span>
+                                </button>
+                                <button type="button"
+                                    onClick={() => updateConversationPreference(selectedContact.contactId, { isArchived: !selectedContact.isArchived })}
+                                    title={selectedContact.isArchived ? 'Khôi phục hội thoại' : 'Lưu trữ hội thoại'}
+                                    className={`flex h-9 w-9 items-center justify-center rounded-lg ${selectedContact.isArchived ? 'bg-slate-200 text-slate-800' : 'text-slate-800 hover:bg-slate-50'}`}>
+                                    <span className="material-symbols-outlined !text-xl">{selectedContact.isArchived ? 'unarchive' : 'archive'}</span>
                                 </button>
                                 {isEmployer && chatApplications.length > 0 && (
                                     <>

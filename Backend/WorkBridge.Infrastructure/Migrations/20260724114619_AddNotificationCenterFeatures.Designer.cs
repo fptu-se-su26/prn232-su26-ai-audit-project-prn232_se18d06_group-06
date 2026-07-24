@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkBridge.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using WorkBridge.Infrastructure.Data;
 namespace WorkBridge.Infrastructure.Migrations
 {
     [DbContext(typeof(WorkBridgeContext))]
-    partial class WorkBridgeContextModelSnapshot : ModelSnapshot
+    [Migration("20260724114619_AddNotificationCenterFeatures")]
+    partial class AddNotificationCenterFeatures
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -479,81 +482,6 @@ namespace WorkBridge.Infrastructure.Migrations
                     b.HasIndex("EmployerId");
 
                     b.ToTable("EmployerShiftTimings");
-                });
-
-            modelBuilder.Entity("WorkBridge.Domain.Entities.EmployerVerification", b =>
-                {
-                    b.Property<int>("VerificationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VerificationId"));
-
-                    b.Property<string>("BusinessLicenseUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("EmployerId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("LegalCompanyName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("RegistrationAddress")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("RepresentativeName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("RepresentativeTitle")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ReviewNote")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("ReviewedByUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Pending");
-
-                    b.Property<string>("SubmissionNote")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime>("SubmittedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SupportingDocumentUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("TaxId")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("VerificationId");
-
-                    b.HasIndex("EmployerId", "Status", "SubmittedAt");
-
-                    b.ToTable("EmployerVerifications");
                 });
 
             modelBuilder.Entity("WorkBridge.Domain.Entities.Employment", b =>
@@ -2010,17 +1938,6 @@ namespace WorkBridge.Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("WorkBridge.Domain.Entities.EmployerVerification", b =>
-                {
-                    b.HasOne("WorkBridge.Domain.Entities.EmployerProfile", "Employer")
-                        .WithMany("Verifications")
-                        .HasForeignKey("EmployerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Employer");
-                });
-
             modelBuilder.Entity("WorkBridge.Domain.Entities.Employment", b =>
                 {
                     b.HasOne("WorkBridge.Domain.Entities.Branch", null)
@@ -2427,8 +2344,6 @@ namespace WorkBridge.Infrastructure.Migrations
                     b.Navigation("JobPosts");
 
                     b.Navigation("Subscriptions");
-
-                    b.Navigation("Verifications");
                 });
 
             modelBuilder.Entity("WorkBridge.Domain.Entities.JobCategory", b =>

@@ -28,6 +28,8 @@ public partial class WorkBridgeContext : DbContext, IWorkBridgeContext
 
     public virtual DbSet<Branch> Branches { get; set; }
 
+    public virtual DbSet<ConversationPreference> ConversationPreferences { get; set; }
+
     public virtual DbSet<EmployeeRate> EmployeeRates { get; set; }
 
     public virtual DbSet<Employment> Employments { get; set; }
@@ -372,6 +374,21 @@ public partial class WorkBridgeContext : DbContext, IWorkBridgeContext
                     });
         });
 
+        modelBuilder.Entity<ConversationPreference>(entity =>
+        {
+            entity.HasKey(e => e.ConversationPreferenceId);
+            entity.HasIndex(e => new { e.UserId, e.ContactId }).IsUnique();
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+            entity.HasOne(e => e.User)
+                .WithMany(e => e.ConversationPreferences)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Contact)
+                .WithMany()
+                .HasForeignKey(e => e.ContactId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
         modelBuilder.Entity<JobShift>(entity =>
         {
             entity.HasKey(e => e.ShiftId).HasName("PK__JobShift__C0A838818353CA3C");
@@ -451,6 +468,8 @@ public partial class WorkBridgeContext : DbContext, IWorkBridgeContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.Category).HasMaxLength(50).HasDefaultValue("General");
+            entity.Property(e => e.ActionUrl).HasMaxLength(500);
 
             entity.HasOne(d => d.User).WithMany(p => p.Notifications)
                 .HasForeignKey(d => d.UserId)

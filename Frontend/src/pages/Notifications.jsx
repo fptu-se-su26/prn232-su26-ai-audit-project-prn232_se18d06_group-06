@@ -1,243 +1,181 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
 import toast from 'react-hot-toast';
+import api from '../services/api';
 import { signalRService } from '../services/signalrService';
 import Pagination from '../components/shared/Pagination';
 import { getNotificationIcon } from '../utils/notificationIcon';
 
-const ITEMS_PER_PAGE = 8;
+const PAGE_SIZE = 12;
+const STATES = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'unread', label: 'Chưa đọc' },
+    { value: 'read', label: 'Đã đọc' },
+    { value: 'archived', label: 'Đã lưu trữ' },
+];
 
 const Notifications = () => {
-    const [notifications, setNotifications] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [loading, setLoading] = useState(true);
-    const token = localStorage.getItem('token');
     const navigate = useNavigate();
+    const [data, setData] = useState({ items: [], totalItems: 0, unreadCount: 0, categoryCounts: {} });
+    const [page, setPage] = useState(1);
+    const [state, setState] = useState('all');
+    const [category, setCategory] = useState('');
+    const [search, setSearch] = useState('');
+    const [selected, setSelected] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (token) {
-            fetchNotifications();
-        } else {
-            setLoading(false);
-        }
-
-        // Real-time: new notification pushed by server
-        const onReceiveNotif = (notif) => {
-            setNotifications(prev => {
-                if (prev.some(n => n.notificationId === notif.notificationId)) return prev;
-                return [notif, ...prev];
-            });
-        };
-
-        signalRService.on('ReceiveNotification', onReceiveNotif);
-        return () => signalRService.off('ReceiveNotification', onReceiveNotif);
-    }, [token]);
-
-    useEffect(() => {
-        const totalPages = Math.max(1, Math.ceil(notifications.length / ITEMS_PER_PAGE));
-        if (currentPage > totalPages) setCurrentPage(totalPages);
-    }, [notifications.length, currentPage]);
-
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
+        setLoading(true);
         try {
             const response = await api.get('/notification', {
-                headers: { Authorization: `Bearer ${token}` }
+                params: { page, pageSize: PAGE_SIZE, state, category: category || undefined, search: search || undefined },
             });
-            setNotifications(response.data);
+            setData(response.data);
+            setSelected([]);
         } catch (error) {
-            console.error('Error fetching notifications:', error);
+            console.error(error);
             toast.error('Không thể tải thông báo.');
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, state, category, search]);
 
-    const markAsRead = async (id) => {
-        try {
-            await api.patch(`/notification/${id}/read`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setNotifications(prev => prev.map(n =>
-                n.notificationId === id ? { ...n, isRead: true } : n
-            ));
-        } catch (error) {
-            console.error('Error marking as read:', error);
-        }
-    };
+    useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+    useEffect(() => {
+        const refresh = () => { setPage(1); fetchNotifications(); };
+        signalRService.on('ReceiveNotification', refresh);
+        return () => signalRService.off('ReceiveNotification', refresh);
+    }, [fetchNotifications]);
 
-    const deleteNotification = async (id, e) => {
-        e.stopPropagation();
-        try {
-            await api.delete(`/notification/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setNotifications(prev => prev.filter(n => n.notificationId !== id));
-            toast.success('Đã xóa thông báo.');
-        } catch (error) {
-            console.error('Error deleting notification:', error);
-            toast.error('Không thể xóa thông báo.');
-        }
-    };
+    const updateFilter = (setter, value) => { setter(value); setPage(1); };
+    const toggleSelected = (id) => setSelected((current) => current.includes(id)
+        ? current.filter((item) => item !== id) : [...current, id]);
+    const selectPage = () => setSelected(selected.length === data.items.length
+        ? [] : data.items.map((item) => item.notificationId));
 
-    const clearReadNotifications = async () => {
-        try {
-            await api.delete('/notification/delete-read', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setNotifications(prev => prev.filter(n => !n.isRead));
-            toast.success('Đã xóa tất cả thông báo đã đọc.');
-        } catch (error) {
-            console.error('Error deleting read notifications:', error);
-            toast.error('Không thể xóa thông báo đã đọc.');
-        }
-    };
-
-    const handleNotificationClick = async (n) => {
-        if (!n.isRead) {
-            await markAsRead(n.notificationId);
-        }
-
+    const markAsRead = async (notification) => {
+        if (!notification.isRead) await api.patch(`/notification/${notification.notificationId}/read`);
+        if (notification.actionUrl) return navigate(notification.actionUrl);
+        const text = `${notification.title} ${notification.message}`.toLowerCase();
         const role = localStorage.getItem('role');
-        const titleLower = n.title.toLowerCase();
-        const msgLower = n.message.toLowerCase();
-
         if (role === 'Employer') {
-            if (titleLower.includes('application') || msgLower.includes('application')) {
-                navigate('/employer-dashboard?tab=review-applicants');
-            } else if (titleLower.includes('offer') || msgLower.includes('offer')) {
-                navigate('/employer-dashboard?tab=offers');
-            } else if (titleLower.includes('interview') || msgLower.includes('interview')) {
-                navigate('/employer-dashboard?tab=interviews');
-            } else if (titleLower.includes('rate') || titleLower.includes('position') || titleLower.includes('employment') || titleLower.includes('workforce')) {
-                navigate('/employer-dashboard?tab=employees');
-            } else if (titleLower.includes('shift') || msgLower.includes('shift')) {
-                navigate('/employer-dashboard?tab=shifts');
-            } else if (titleLower.includes('payroll') || titleLower.includes('payroll')) {
-                navigate('/employer-dashboard?tab=payroll');
-            } else {
-                navigate('/employer-dashboard');
-            }
-        } else {
-            // Applicant / General
-            if (titleLower.includes('application') || msgLower.includes('application')) {
-                navigate('/my-applications');
-            } else if (titleLower.includes('offer') || msgLower.includes('offer')) {
-                navigate('/offers');
-            } else if (titleLower.includes('interview') || msgLower.includes('interview')) {
-                navigate('/interviews');
-            } else if (titleLower.includes('rate') || titleLower.includes('position') || titleLower.includes('employment') || titleLower.includes('workforce') || titleLower.includes('shift') || msgLower.includes('shift')) {
-                navigate('/my-work');
-            } else if (titleLower.includes('payroll') || titleLower.includes('payslip') || msgLower.includes('payslip')) {
-                navigate('/payslips');
-            } else {
-                navigate('/profile');
-            }
+            if (text.includes('application')) return navigate('/employer-dashboard?tab=review-applicants');
+            if (text.includes('interview')) return navigate('/employer-dashboard?tab=interviews');
+            if (text.includes('offer')) return navigate('/employer-dashboard?tab=offers');
+            return navigate('/employer-dashboard');
         }
+        if (text.includes('application')) return navigate('/my-applications');
+        if (text.includes('interview')) return navigate('/interviews');
+        if (text.includes('offer')) return navigate('/offers');
+        return navigate('/profile');
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-            </div>
-        );
-    }
+    const archiveSelected = async (archived = true) => {
+        if (!selected.length) return;
+        await api.patch(`/notification/archive?archived=${archived}`, { notificationIds: selected });
+        toast.success(archived ? 'Đã lưu trữ thông báo.' : 'Đã khôi phục thông báo.');
+        fetchNotifications();
+    };
 
-    const hasReadNotifications = notifications.some(n => n.isRead);
-    const paginatedNotifications = notifications.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
+    const deleteSelected = async () => {
+        if (!selected.length) return;
+        await api.delete('/notification/bulk', { data: { notificationIds: selected } });
+        toast.success('Đã xóa thông báo đã chọn.');
+        fetchNotifications();
+    };
+
+    const deleteOne = async (id, event) => {
+        event.stopPropagation();
+        await api.delete(`/notification/${id}`);
+        toast.success('Đã xóa thông báo.');
+        fetchNotifications();
+    };
+
+    const categories = Object.entries(data.categoryCounts || {});
 
     return (
-        <div className="bg-bg-light min-h-screen pb-20 font-display">
-            <div className="bg-white border-b border-slate-200/60 pb-8 pt-8">
-                <div className="max-w-[800px] mx-auto px-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-black text-slate-800 tracking-tight">Thông báo</h1>
-                        <p className="text-slate-700 mt-2">Cập nhật hoạt động mới nhất của bạn.</p>
+        <div className="min-h-screen bg-slate-50 pb-20 font-display">
+            <header className="border-b border-slate-200 bg-white">
+                <div className="mx-auto max-w-5xl px-5 py-8">
+                    <div className="flex flex-wrap items-end justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl font-black text-slate-900">Trung tâm thông báo</h1>
+                            <p className="mt-2 text-sm text-slate-600">{data.unreadCount} thông báo chưa đọc</p>
+                        </div>
+                        <label className="relative w-full sm:w-80">
+                            <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400">search</span>
+                            <input value={search} onChange={(e) => updateFilter(setSearch, e.target.value)}
+                                className="w-full rounded-xl border border-slate-200 py-2.5 pl-11 pr-4 text-sm outline-none focus:border-primary"
+                                placeholder="Tìm theo tiêu đề hoặc nội dung" aria-label="Tìm thông báo" />
+                        </label>
                     </div>
-                    {hasReadNotifications && (
-                        <button
-                            onClick={clearReadNotifications}
-                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-700 hover:text-red-500 bg-slate-50 hover:bg-red-50 border border-slate-200 hover:border-red-100 rounded-xl transition-all shadow-sm"
-                        >
-                            <span className="material-symbols-outlined !text-[16px]">clear_all</span>
-                            Xóa đã đọc
-                        </button>
-                    )}
                 </div>
-            </div>
+            </header>
 
-            <main className="max-w-[800px] mx-auto px-6 mt-10">
-                {notifications.length === 0 ? (
-                    <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-20 text-center">
-                        <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6">
-                            <span className="material-symbols-outlined text-slate-300 !text-4xl">notifications_off</span>
-                        </div>
-                        <h2 className="text-xl font-bold text-slate-700">Không có thông báo</h2>
-                        <p className="text-slate-700 mt-2">Bạn đã xem hết rồi!</p>
-                    </div>
-                ) : (
-                    <div className="overflow-hidden rounded-3xl border border-slate-200/60 bg-white shadow-sm">
-                        <div className="space-y-4 p-4 sm:p-5">
-                        {paginatedNotifications.map((n) => (
-                            <div
-                                key={n.notificationId}
-                                onClick={() => handleNotificationClick(n)}
-                                className={`group bg-white rounded-2xl border transition-all p-6 cursor-pointer relative hover:shadow-md ${
-                                    n.isRead
-                                    ? 'border-slate-100 opacity-75 hover:opacity-100'
-                                    : 'border-primary/20 shadow-sm shadow-primary/5 bg-primary/[0.01] hover:bg-primary/[0.02]'
-                                }`}
-                            >
-                                <div className="flex items-start gap-4 pr-8">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                                        n.isRead ? 'bg-slate-100 text-slate-800' : 'bg-primary/10 text-primary'
-                                    }`}>
-                                        <span className="material-symbols-outlined !text-[20px]">
-                                            {getNotificationIcon(n.title, n.message)}
-                                        </span>
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between mb-1 gap-4">
-                                            <h3 className={`font-bold transition-colors ${n.isRead ? 'text-slate-800' : 'text-slate-800'} group-hover:text-primary`}>
-                                                {n.title}
-                                            </h3>
-                                            <span className="text-[11px] font-medium text-slate-800 capitalize whitespace-nowrap">
-                                                {new Date(n.createdAt).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                        <p className={`text-sm ${n.isRead ? 'text-slate-700' : 'text-slate-800'}`}>
-                                            {n.message}
-                                        </p>
-                                    </div>
-                                    {!n.isRead && (
-                                        <div className="w-2.5 h-2.5 rounded-full bg-primary mt-3 flex-shrink-0"></div>
-                                    )}
-                                </div>
+            <main className="mx-auto mt-7 max-w-5xl px-5">
+                <div className="mb-5 flex flex-wrap items-center gap-2">
+                    {STATES.map((item) => (
+                        <button key={item.value} onClick={() => updateFilter(setState, item.value)}
+                            className={`rounded-full px-4 py-2 text-sm font-bold ${state === item.value ? 'bg-primary text-white' : 'bg-white text-slate-700 ring-1 ring-slate-200'}`}>
+                            {item.label}
+                        </button>
+                    ))}
+                    <select value={category} onChange={(e) => updateFilter(setCategory, e.target.value)}
+                        className="ml-auto rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm" aria-label="Loại thông báo">
+                        <option value="">Mọi loại</option>
+                        {categories.map(([name, count]) => <option key={name} value={name}>{name} ({count})</option>)}
+                    </select>
+                </div>
 
-                                {/* Delete button on hover */}
-                                <button
-                                    onClick={(e) => deleteNotification(n.notificationId, e)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 w-8 h-8 rounded-full flex items-center justify-center text-slate-800 hover:text-red-500 hover:bg-red-50 border border-transparent hover:border-red-100 transition-all"
-                                    title="Xóa thông báo"
-                                >
-                                    <span className="material-symbols-outlined !text-[18px]">delete</span>
-                                </button>
-                            </div>
-                        ))}
-                        </div>
-                        <Pagination
-                            currentPage={currentPage}
-                            totalItems={notifications.length}
-                            itemsPerPage={ITEMS_PER_PAGE}
-                            onPageChange={setCurrentPage}
-                            label="thông báo"
-                        />
+                {selected.length > 0 && (
+                    <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-white">
+                        <span className="mr-auto text-sm font-bold">Đã chọn {selected.length}</span>
+                        <button onClick={() => archiveSelected(state !== 'archived')} className="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold hover:bg-white/20">
+                            {state === 'archived' ? 'Khôi phục' : 'Lưu trữ'}
+                        </button>
+                        <button onClick={deleteSelected} className="rounded-lg bg-red-500 px-3 py-2 text-xs font-bold hover:bg-red-600">Xóa</button>
                     </div>
                 )}
+
+                <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-busy={loading}>
+                    <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-3">
+                        <input type="checkbox" checked={data.items.length > 0 && selected.length === data.items.length}
+                            onChange={selectPage} aria-label="Chọn tất cả thông báo trong trang" />
+                        <span className="text-xs font-bold uppercase tracking-wide text-slate-500">{data.totalItems} thông báo</span>
+                    </div>
+                    {loading ? (
+                        <div className="p-16 text-center text-slate-500">Đang tải thông báo...</div>
+                    ) : data.items.length === 0 ? (
+                        <div className="p-16 text-center">
+                            <span className="material-symbols-outlined text-5xl text-slate-300">notifications_off</span>
+                            <h2 className="mt-3 font-bold text-slate-700">Không tìm thấy thông báo</h2>
+                        </div>
+                    ) : data.items.map((item) => (
+                        <article key={item.notificationId} onClick={() => markAsRead(item)}
+                            className={`group flex cursor-pointer gap-4 border-b border-slate-100 p-5 last:border-0 hover:bg-slate-50 ${item.isRead ? '' : 'bg-blue-50/40'}`}>
+                            <input type="checkbox" checked={selected.includes(item.notificationId)}
+                                onChange={() => toggleSelected(item.notificationId)} onClick={(e) => e.stopPropagation()}
+                                aria-label={`Chọn ${item.title}`} />
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                                <span className="material-symbols-outlined">{getNotificationIcon(item.title, item.message)}</span>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <h3 className="font-bold text-slate-900">{item.title}</h3>
+                                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">{item.category}</span>
+                                    {!item.isRead && <span className="h-2 w-2 rounded-full bg-primary" aria-label="Chưa đọc" />}
+                                </div>
+                                <p className="mt-1 text-sm text-slate-600">{item.message}</p>
+                                <time className="mt-2 block text-xs text-slate-400">{new Date(item.createdAt).toLocaleString('vi-VN')}</time>
+                            </div>
+                            <button onClick={(e) => deleteOne(item.notificationId, e)}
+                                className="h-9 w-9 rounded-lg text-slate-400 opacity-0 hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                                aria-label={`Xóa ${item.title}`}><span className="material-symbols-outlined text-lg">delete</span></button>
+                        </article>
+                    ))}
+                    <Pagination currentPage={page} totalItems={data.totalItems} itemsPerPage={PAGE_SIZE}
+                        onPageChange={setPage} label="thông báo" />
+                </section>
             </main>
         </div>
     );

@@ -24,7 +24,7 @@ namespace WorkBridge.Application.Services
             _emailQueue = emailQueue;
         }
 
-        public async Task CreateNotificationAsync(int userId, string title, string message)
+        public async Task CreateNotificationAsync(int userId, string title, string message, string category = "General", string? actionUrl = null)
         {
             var notification = new Notification
             {
@@ -32,6 +32,9 @@ namespace WorkBridge.Application.Services
                 Title = title,
                 Message = message,
                 IsRead = false,
+                IsArchived = false,
+                Category = string.IsNullOrWhiteSpace(category) ? "General" : category.Trim(),
+                ActionUrl = actionUrl,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -44,12 +47,15 @@ namespace WorkBridge.Application.Services
                 Title = notification.Title,
                 Message = notification.Message,
                 IsRead = notification.IsRead,
+                IsArchived = notification.IsArchived,
+                Category = notification.Category,
+                ActionUrl = notification.ActionUrl,
                 CreatedAt = notification.CreatedAt
             };
 
             // Query unread count synchronously on the request thread before launching the fire-and-forget task
             var unreadCount = await _context.Notifications
-                .CountAsync(n => n.UserId == userId && !n.IsRead);
+                .CountAsync(n => n.UserId == userId && !n.IsRead && !n.IsArchived);
 
             // Push real-time to the target user safely on the request thread
             try
@@ -80,20 +86,67 @@ namespace WorkBridge.Application.Services
             }
         }
 
-        public async Task<IEnumerable<NotificationResponse>> GetNotificationsAsync(int userId)
+        public async Task<NotificationPageResponse> GetNotificationsAsync(
+            int userId,
+            int page,
+            int pageSize,
+            string? category,
+            string? state,
+            string? search)
         {
-            return await _context.Notifications
-                .Where(n => n.UserId == userId)
+            page = Math.Max(1, page);
+            pageSize = Math.Clamp(pageSize, 5, 100);
+            var query = _context.Notifications.Where(n => n.UserId == userId);
+
+            if (!string.IsNullOrWhiteSpace(category) && !category.Equals("All", StringComparison.OrdinalIgnoreCase))
+                query = query.Where(n => n.Category == category);
+            query = state?.ToLowerInvariant() switch
+            {
+                "unread" => query.Where(n => !n.IsRead && !n.IsArchived),
+                "read" => query.Where(n => n.IsRead && !n.IsArchived),
+                "archived" => query.Where(n => n.IsArchived),
+                _ => query.Where(n => !n.IsArchived)
+            };
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(n => n.Title.Contains(term) || n.Message.Contains(term));
+            }
+
+            var totalItems = await query.CountAsync();
+            var items = await query
                 .OrderByDescending(n => n.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(n => new NotificationResponse
                 {
                     NotificationId = n.NotificationId,
                     Title = n.Title,
                     Message = n.Message,
                     IsRead = n.IsRead,
+                    IsArchived = n.IsArchived,
+                    Category = n.Category,
+                    ActionUrl = n.ActionUrl,
                     CreatedAt = n.CreatedAt
                 })
                 .ToListAsync();
+
+            var categoryCounts = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsArchived)
+                .GroupBy(n => n.Category)
+                .Select(group => new { group.Key, Count = group.Count() })
+                .ToDictionaryAsync(item => item.Key, item => item.Count);
+
+            return new NotificationPageResponse
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)pageSize)),
+                UnreadCount = await GetUnreadCountAsync(userId),
+                CategoryCounts = categoryCounts
+            };
         }
 
         public async Task<bool> MarkAsReadAsync(int userId, int notificationId)
@@ -108,7 +161,7 @@ namespace WorkBridge.Application.Services
 
             // Query unread count synchronously on the request thread before launching the fire-and-forget task
             var unreadCount = await _context.Notifications
-                .CountAsync(n => n.UserId == userId && !n.IsRead);
+                .CountAsync(n => n.UserId == userId && !n.IsRead && !n.IsArchived);
 
             // Update the badge count in real-time safely on the request thread
             try
@@ -147,7 +200,7 @@ namespace WorkBridge.Application.Services
         public async Task<int> GetUnreadCountAsync(int userId)
         {
             return await _context.Notifications
-                .CountAsync(n => n.UserId == userId && !n.IsRead);
+                .CountAsync(n => n.UserId == userId && !n.IsRead && !n.IsArchived);
         }
 
         public async Task<bool> DeleteNotificationAsync(int userId, int notificationId)
@@ -162,7 +215,7 @@ namespace WorkBridge.Application.Services
 
             // Push real-time unread count update
             var unreadCount = await _context.Notifications
-                .CountAsync(n => n.UserId == userId && !n.IsRead);
+                .CountAsync(n => n.UserId == userId && !n.IsRead && !n.IsArchived);
 
             try
             {
@@ -185,6 +238,30 @@ namespace WorkBridge.Application.Services
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<int> ArchiveNotificationsAsync(int userId, IEnumerable<int> notificationIds, bool archived)
+        {
+            var ids = notificationIds.Distinct().Take(200).ToList();
+            if (ids.Count == 0) return 0;
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == userId && ids.Contains(n.NotificationId))
+                .ToListAsync();
+            foreach (var notification in notifications) notification.IsArchived = archived;
+            await _context.SaveChangesAsync();
+            return notifications.Count;
+        }
+
+        public async Task<int> DeleteNotificationsAsync(int userId, IEnumerable<int> notificationIds)
+        {
+            var ids = notificationIds.Distinct().Take(200).ToList();
+            if (ids.Count == 0) return 0;
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == userId && ids.Contains(n.NotificationId))
+                .ToListAsync();
+            _context.Notifications.RemoveRange(notifications);
+            await _context.SaveChangesAsync();
+            return notifications.Count;
         }
     }
 }

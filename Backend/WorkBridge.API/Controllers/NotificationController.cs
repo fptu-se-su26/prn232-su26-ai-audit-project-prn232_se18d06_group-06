@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkBridge.Application.Services;
+using WorkBridge.Application.DTOs;
 
 namespace WorkBridge.API.Controllers
 {
@@ -26,10 +27,11 @@ namespace WorkBridge.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetNotifications()
+        public async Task<IActionResult> GetNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 12,
+            [FromQuery] string? category = null, [FromQuery] string? state = null, [FromQuery] string? search = null)
         {
             var userId = GetUserId();
-            var notifications = await _notificationService.GetNotificationsAsync(userId);
+            var notifications = await _notificationService.GetNotificationsAsync(userId, page, pageSize, category, state, search);
             return Ok(notifications);
         }
 
@@ -72,6 +74,19 @@ namespace WorkBridge.API.Controllers
             var userId = GetUserId();
             await _notificationService.DeleteAllReadNotificationsAsync(userId);
             return Ok(new { message = "Đã xóa tất cả thông báo đã đọc." });
+        }
+        [HttpPatch("archive")]
+        public async Task<IActionResult> Archive([FromBody] NotificationBulkRequest request, [FromQuery] bool archived = true)
+        {
+            var count = await _notificationService.ArchiveNotificationsAsync(GetUserId(), request.NotificationIds, archived);
+            return Ok(new { count });
+        }
+
+        [HttpDelete("bulk")]
+        public async Task<IActionResult> DeleteBulk([FromBody] NotificationBulkRequest request)
+        {
+            var count = await _notificationService.DeleteNotificationsAsync(GetUserId(), request.NotificationIds);
+            return Ok(new { count });
         }
     }
 }
