@@ -1,61 +1,87 @@
 import React from 'react';
 
+const createReference = () => `WB-${Date.now().toString(36).toUpperCase()}`;
+
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null, reference: null, detailsOpen: false };
+    this.headingRef = React.createRef();
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    return { hasError: true, error, reference: createReference() };
   }
 
   componentDidCatch(error, info) {
     console.error('UI error boundary caught:', error, info);
+    this.props.onError?.({ error, info, reference: this.state.reference });
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
-      this.setState({ hasError: false, error: null });
+      this.reset();
+      return;
+    }
+    if (!prevState.hasError && this.state.hasError) {
+      this.headingRef.current?.focus();
     }
   }
+
+  reset = () => {
+    this.setState({ hasError: false, error: null, reference: null, detailsOpen: false });
+  };
+
+  copyReference = async () => {
+    const text = `${this.state.reference}: ${this.state.error?.message || 'Unknown UI error'}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      this.setState({ copied: true });
+    } catch {
+      this.setState({ copied: false });
+    }
+  };
 
   render() {
-    if (this.state.hasError) {
-      if (this.props.fallback !== undefined) {
-        return this.props.fallback;
-      }
+    if (!this.state.hasError) return this.props.children;
+    if (this.props.fallback !== undefined) return this.props.fallback;
 
-      return (
-        <div className="min-h-[calc(100vh-64px)] bg-slate-50 flex items-center justify-center px-6 py-16">
-          <div className="w-full max-w-md rounded-3xl bg-white border border-slate-200 shadow-xl shadow-slate-200/60 p-8 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-5">
-              <span className="material-symbols-outlined !text-3xl">refresh</span>
-            </div>
-            <h1 className="text-2xl font-black text-slate-800">Đã xảy ra lỗi</h1>
-            <p className="text-sm text-slate-700 mt-2">
-              Trang gặp lỗi hiển thị, nhưng ứng dụng vẫn đang hoạt động.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 mt-7">
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="flex-1 h-11 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dk transition-colors"
-              >
-                Tải lại
-              </button>
-              <a
-                href="/"
-                className="flex-1 h-11 rounded-xl border border-slate-200 text-slate-800 text-sm font-bold flex items-center justify-center hover:bg-slate-50 transition-colors"
-              >
-                Trang chủ
-              </a>
-            </div>
+    const { error, reference, detailsOpen, copied } = this.state;
+    return (
+      <section className="error-boundary" role="alert" aria-labelledby="error-boundary-title">
+        <div className="error-boundary__card">
+          <span className="error-boundary__icon material-symbols-outlined" aria-hidden="true">sentiment_dissatisfied</span>
+          <p className="error-boundary__eyebrow">WorkBridge gặp sự cố</p>
+          <h1 id="error-boundary-title" ref={this.headingRef} tabIndex="-1">Không thể hiển thị phần nội dung này</h1>
+          <p className="error-boundary__description">
+            Dữ liệu của bạn vẫn an toàn. Bạn có thể thử mở lại phần này hoặc tải lại toàn bộ trang.
+          </p>
+
+          <div className="error-boundary__actions">
+            <button type="button" className="error-boundary__primary" onClick={this.reset}>
+              <span className="material-symbols-outlined" aria-hidden="true">replay</span>Thử mở lại
+            </button>
+            <button type="button" onClick={() => window.location.reload()}>
+              <span className="material-symbols-outlined" aria-hidden="true">refresh</span>Tải lại trang
+            </button>
+            <a href="/">
+              <span className="material-symbols-outlined" aria-hidden="true">home</span>Về trang chủ
+            </a>
           </div>
-        </div>
-      );
-    }
 
-    return this.props.children;
+          <div className="error-boundary__reference">
+            <span>Mã tra cứu: <strong>{reference}</strong></span>
+            <button type="button" onClick={this.copyReference}>{copied ? 'Đã sao chép' : 'Sao chép mã'}</button>
+          </div>
+
+          {import.meta.env.DEV && error && (
+            <details open={detailsOpen} onToggle={(event) => this.setState({ detailsOpen: event.currentTarget.open })}>
+              <summary>Chi tiết dành cho nhà phát triển</summary>
+              <pre>{error.stack || error.message}</pre>
+            </details>
+          )}
+        </div>
+      </section>
+    );
   }
 }
