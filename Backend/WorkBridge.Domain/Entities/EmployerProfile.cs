@@ -35,5 +35,7 @@ public partial class EmployerProfile
 
     public virtual ICollection<JobPost> JobPosts { get; set; } = new List<JobPost>();
 
+    public virtual ICollection<EmployerVerification> Verifications { get; set; } = new List<EmployerVerification>();
+
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 }
