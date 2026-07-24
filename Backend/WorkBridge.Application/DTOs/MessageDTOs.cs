@@ -44,6 +44,16 @@ namespace WorkBridge.Application.DTOs
         public int UnreadCount { get; set; }
         public bool IsOnline { get; set; }
         public DateTime? LastSeenAt { get; set; }
+        public bool IsPinned { get; set; }
+        public bool IsArchived { get; set; }
+        public bool IsMuted { get; set; }
+    }
+
+    public class UpdateConversationPreferenceRequest
+    {
+        public bool? IsPinned { get; set; }
+        public bool? IsArchived { get; set; }
+        public bool? IsMuted { get; set; }
     }
 
     public class InterviewMessageSummary
