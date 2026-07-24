@@ -38,6 +38,8 @@ public partial class WorkBridgeContext : DbContext, IWorkBridgeContext
 
     public virtual DbSet<EmployerProfile> EmployerProfiles { get; set; }
 
+    public virtual DbSet<EmployerVerification> EmployerVerifications { get; set; }
+
     public virtual DbSet<JobCategory> JobCategories { get; set; }
 
     public virtual DbSet<JobPost> JobPosts { get; set; }
@@ -272,6 +274,27 @@ public partial class WorkBridgeContext : DbContext, IWorkBridgeContext
                 .HasForeignKey<EmployerProfile>(d => d.EmployerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__EmployerP__Emplo__49C3F6B7");
+        });
+
+        modelBuilder.Entity<EmployerVerification>(entity =>
+        {
+            entity.HasKey(e => e.VerificationId);
+            entity.HasIndex(e => new { e.EmployerId, e.Status, e.SubmittedAt });
+            entity.Property(e => e.TaxId).HasMaxLength(50);
+            entity.Property(e => e.LegalCompanyName).HasMaxLength(255);
+            entity.Property(e => e.RegistrationAddress).HasMaxLength(500);
+            entity.Property(e => e.RepresentativeName).HasMaxLength(255);
+            entity.Property(e => e.RepresentativeTitle).HasMaxLength(100);
+            entity.Property(e => e.BusinessLicenseUrl).HasMaxLength(500);
+            entity.Property(e => e.SupportingDocumentUrl).HasMaxLength(500);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Pending");
+            entity.Property(e => e.SubmissionNote).HasMaxLength(1000);
+            entity.Property(e => e.ReviewNote).HasMaxLength(1000);
+
+            entity.HasOne(e => e.Employer)
+                .WithMany(e => e.Verifications)
+                .HasForeignKey(e => e.EmployerId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<JobCategory>(entity =>

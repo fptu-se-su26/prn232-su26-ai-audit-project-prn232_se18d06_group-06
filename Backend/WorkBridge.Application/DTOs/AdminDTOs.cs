@@ -73,17 +73,36 @@ namespace WorkBridge.Application.DTOs
 
     public class AdminEmployerVerificationResponse
     {
+        public int VerificationId { get; set; }
         public int EmployerId { get; set; }
         public string CompanyName { get; set; } = string.Empty;
         public string ContactEmail { get; set; } = string.Empty;
         public string? TaxId { get; set; }
         public string? BusinessLicenseUrl { get; set; }
+        public string? SupportingDocumentUrl { get; set; }
+        public string LegalCompanyName { get; set; } = string.Empty;
+        public string RegistrationAddress { get; set; } = string.Empty;
+        public string RepresentativeName { get; set; } = string.Empty;
+        public string? RepresentativeTitle { get; set; }
         public string VerificationStatus { get; set; } = string.Empty;
+        public string? SubmissionNote { get; set; }
+        public string? ReviewNote { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public DateTime? ReviewedAt { get; set; }
+    }
+
+    public class AdminVerificationListResponse
+    {
+        public List<AdminEmployerVerificationResponse> Items { get; set; } = new();
+        public int TotalCount { get; set; }
+        public int PendingCount { get; set; }
+        public int VerifiedCount { get; set; }
+        public int RejectedCount { get; set; }
     }
 
     public class AdminReviewVerificationRequest
     {
         public string Status { get; set; } = string.Empty; // "Verified" or "Rejected"
+        public string? ReviewNote { get; set; }
     }
 }

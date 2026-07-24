@@ -2,6 +2,7 @@ using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using WorkBridge.Application.DTOs;
 using WorkBridge.Application.Services;
 
@@ -130,10 +131,10 @@ namespace WorkBridge.API.Controllers
         }
 
         // Employer Verifications
-        [HttpGet("employers/verifications/pending")]
-        public async Task<IActionResult> GetPendingVerifications()
+        [HttpGet("employers/verifications")]
+        public async Task<IActionResult> GetEmployerVerifications([FromQuery] string? status, [FromQuery] string? search)
         {
-            var result = await _adminService.GetPendingVerificationsAsync();
+            var result = await _adminService.GetEmployerVerificationsAsync(status, search);
             return Ok(result);
         }
 
@@ -143,7 +144,13 @@ namespace WorkBridge.API.Controllers
             if (request.Status != "Verified" && request.Status != "Rejected")
                 return BadRequest(new { message = "Trạng thái không hợp lệ." });
 
-            var result = await _adminService.ReviewEmployerVerificationAsync(id, request.Status);
+            if (request.Status == "Rejected" && string.IsNullOrWhiteSpace(request.ReviewNote))
+                return BadRequest(new { message = "Vui lòng nhập lý do từ chối." });
+
+            var adminIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(adminIdClaim, out var adminUserId)) return Unauthorized();
+
+            var result = await _adminService.ReviewEmployerVerificationAsync(id, adminUserId, request);
             if (!result) return NotFound(new { message = "Không tìm thấy hồ sơ doanh nghiệp." });
             return Ok(new { message = "Đã cập nhật trạng thái xác thực." });
         }

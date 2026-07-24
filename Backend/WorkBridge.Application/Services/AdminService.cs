@@ -378,44 +378,82 @@ namespace WorkBridge.Application.Services
         }
 
         // Employer Verifications
-        public async Task<IEnumerable<AdminEmployerVerificationResponse>> GetPendingVerificationsAsync()
+        public async Task<AdminVerificationListResponse> GetEmployerVerificationsAsync(string? status, string? search)
         {
-            var pending = await _context.EmployerProfiles
-                .Include(p => p.Employer)
-                .Where(p => p.VerificationStatus == "Pending" && p.TaxId != null && p.BusinessLicenseUrl != null)
-                .OrderBy(p => p.Employer.CreatedAt)
-                .Select(p => new AdminEmployerVerificationResponse
+            var query = _context.EmployerVerifications
+                .Include(v => v.Employer)
+                .ThenInclude(p => p.Employer)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(status) && !status.Equals("All", StringComparison.OrdinalIgnoreCase))
+                query = query.Where(v => v.Status == status);
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(v => v.TaxId.Contains(term) ||
+                    v.LegalCompanyName.Contains(term) ||
+                    v.Employer.ContactEmail.Contains(term));
+            }
+
+            var items = await query
+                .OrderByDescending(v => v.SubmittedAt)
+                .Select(v => new AdminEmployerVerificationResponse
                 {
-                    EmployerId = p.EmployerId,
-                    CompanyName = p.CompanyName,
-                    ContactEmail = p.ContactEmail,
-                    TaxId = p.TaxId,
-                    BusinessLicenseUrl = p.BusinessLicenseUrl,
-                    VerificationStatus = p.VerificationStatus,
-                    CreatedAt = p.Employer.CreatedAt
+                    VerificationId = v.VerificationId,
+                    EmployerId = v.EmployerId,
+                    CompanyName = v.Employer.CompanyName,
+                    ContactEmail = v.Employer.ContactEmail,
+                    TaxId = v.TaxId,
+                    BusinessLicenseUrl = v.BusinessLicenseUrl,
+                    SupportingDocumentUrl = v.SupportingDocumentUrl,
+                    LegalCompanyName = v.LegalCompanyName,
+                    RegistrationAddress = v.RegistrationAddress,
+                    RepresentativeName = v.RepresentativeName,
+                    RepresentativeTitle = v.RepresentativeTitle,
+                    VerificationStatus = v.Status,
+                    SubmissionNote = v.SubmissionNote,
+                    ReviewNote = v.ReviewNote,
+                    CreatedAt = v.SubmittedAt,
+                    ReviewedAt = v.ReviewedAt
                 })
                 .ToListAsync();
 
-            return pending;
+            return new AdminVerificationListResponse
+            {
+                Items = items,
+                TotalCount = await _context.EmployerVerifications.CountAsync(),
+                PendingCount = await _context.EmployerVerifications.CountAsync(v => v.Status == "Pending"),
+                VerifiedCount = await _context.EmployerVerifications.CountAsync(v => v.Status == "Verified"),
+                RejectedCount = await _context.EmployerVerifications.CountAsync(v => v.Status == "Rejected")
+            };
         }
 
-        public async Task<bool> ReviewEmployerVerificationAsync(int employerId, string status)
+        public async Task<bool> ReviewEmployerVerificationAsync(
+            int verificationId,
+            int adminUserId,
+            AdminReviewVerificationRequest request)
         {
-            var profile = await _context.EmployerProfiles.FindAsync(employerId);
-            if (profile == null) return false;
+            var verification = await _context.EmployerVerifications
+                .Include(v => v.Employer)
+                .FirstOrDefaultAsync(v => v.VerificationId == verificationId);
+            if (verification == null || verification.Status != "Pending") return false;
 
-            profile.VerificationStatus = status;
+            verification.Status = request.Status;
+            verification.ReviewNote = request.ReviewNote?.Trim();
+            verification.ReviewedAt = DateTime.UtcNow;
+            verification.ReviewedByUserId = adminUserId;
+            verification.Employer.VerificationStatus = request.Status;
             await _context.SaveChangesAsync();
 
             // Notify employer
-            string title = status == "Verified" ? "Xác thực doanh nghiệp thành công" : "Xác thực doanh nghiệp bị từ chối";
-            string msg = status == "Verified" 
-                ? "Hồ sơ doanh nghiệp của bạn đã được xác thực thành công. Bạn hiện có thể đăng tin tuyển dụng." 
-                : "Hồ sơ doanh nghiệp của bạn không hợp lệ hoặc thiếu thông tin. Vui lòng cập nhật lại giấy phép kinh doanh.";
+            string title = request.Status == "Verified" ? "Xác thực doanh nghiệp thành công" : "Xác thực doanh nghiệp bị từ chối";
+            string msg = request.Status == "Verified"
+                ? "Hồ sơ doanh nghiệp của bạn đã được xác thực thành công. Bạn hiện có thể đăng tin tuyển dụng."
+                : $"Hồ sơ doanh nghiệp cần được cập nhật. {request.ReviewNote}";
             
             try 
             {
-                await _notificationService.CreateNotificationAsync(employerId, title, msg);
+                await _notificationService.CreateNotificationAsync(verification.EmployerId, title, msg);
             } 
             catch { }
 

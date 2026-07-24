@@ -17,6 +17,7 @@ namespace WorkBridge.Application.Interfaces
         DbSet<EmailVerificationRequest> EmailVerificationRequests { get; set; }
         DbSet<JobApplication> Applications { get; set; }
         DbSet<EmployerProfile> EmployerProfiles { get; set; }
+        DbSet<EmployerVerification> EmployerVerifications { get; set; }
         DbSet<JobCategory> JobCategories { get; set; }
         DbSet<JobPost> JobPosts { get; set; }
         DbSet<JobShift> JobShifts { get; set; }
