@@ -12,6 +12,7 @@ namespace WorkBridge.Application.Interfaces
         DbSet<ApplicantSkill> ApplicantSkills { get; set; }
         DbSet<AttendanceRecord> AttendanceRecords { get; set; }
         DbSet<Branch> Branches { get; set; }
+        DbSet<ConversationPreference> ConversationPreferences { get; set; }
         DbSet<EmployeeRate> EmployeeRates { get; set; }
         DbSet<Employment> Employments { get; set; }
         DbSet<EmailVerificationRequest> EmailVerificationRequests { get; set; }

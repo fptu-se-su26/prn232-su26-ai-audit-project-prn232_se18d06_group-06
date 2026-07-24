@@ -15,6 +15,12 @@ public partial class Notification
 
     public bool IsRead { get; set; }
 
+    public bool IsArchived { get; set; }
+
+    public string Category { get; set; } = "General";
+
+    public string? ActionUrl { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public virtual User User { get; set; } = null!;
