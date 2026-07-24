@@ -27,6 +27,8 @@ import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/shared/ErrorBoundary';
+import NetworkStatus from './components/shared/NetworkStatus';
+import { AccessibilityMenu, AccessibilityProvider } from './contexts/AccessibilityContext';
 import AiChatWidget from './components/shared/AiChatWidget';
 import VipPromoBanner from './components/shared/VipPromoBanner';
 import api from './services/api';
@@ -166,15 +168,17 @@ function App() {
 
   return (
     <AuthModalProvider>
-      <Toaster position="top-right" />
+      <AccessibilityProvider>
+      <Toaster position="top-right" toastOptions={{ duration: 4500 }} />
+      <NetworkStatus />
       <MaintenanceGate />
       <ScrollToTop />
       <PresenceRealtime />
       <PresenceHeartbeat />
-      {!hideHeader && <Header />}
+      {!hideHeader && <div id="site-navigation"><Header /></div>}
       {!hideAiWidget && <AiChatWidget />}
       <VipPromoBanner disabled={hideVipPromo} />
-      <main className={location.pathname === '/messages' ? 'overflow-hidden' : undefined}>
+      <main id="main-content" className={location.pathname === '/messages' ? 'overflow-hidden' : undefined}>
         <ErrorBoundary resetKey={location.pathname}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -213,7 +217,9 @@ function App() {
         </ErrorBoundary>
       </main>
       {!hideFooter && <Footer />}
+      <AccessibilityMenu />
       <AuthModal />
+      </AccessibilityProvider>
     </AuthModalProvider>
   );
 }
