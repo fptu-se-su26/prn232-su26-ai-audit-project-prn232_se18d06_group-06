@@ -1,185 +1,265 @@
-import React, { useState, useEffect } from 'react';
-import api from '../../services/api';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import api, { API_BASE_URL, getApiErrorMessage } from '../../services/api';
+
+const EMPTY_FORM = {
+  taxId: '',
+  legalCompanyName: '',
+  registrationAddress: '',
+  representativeName: '',
+  representativeTitle: '',
+  submissionNote: '',
+};
+
+const STATUS_META = {
+  Verified: { label: 'Đã xác thực', icon: 'verified', tone: 'bg-emerald-100 text-emerald-700' },
+  Pending: { label: 'Đang chờ duyệt', icon: 'pending_actions', tone: 'bg-amber-100 text-amber-700' },
+  Rejected: { label: 'Cần bổ sung', icon: 'error', tone: 'bg-rose-100 text-rose-700' },
+  Unverified: { label: 'Chưa xác thực', icon: 'shield_question', tone: 'bg-slate-100 text-slate-700' },
+};
+
+const fileUrl = (path) => path ? `${API_BASE_URL.replace('/api', '')}${path}` : '#';
+const formatDate = (value) => value
+  ? new Date(value).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })
+  : '—';
+
+function StatusBadge({ status }) {
+  const meta = STATUS_META[status] || STATUS_META.Unverified;
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${meta.tone}`}>
+      <span className="material-symbols-outlined !text-[17px]" aria-hidden="true">{meta.icon}</span>
+      {meta.label}
+    </span>
+  );
+}
+
+function DocumentLink({ href, children }) {
+  if (!href) return null;
+  return (
+    <a
+      href={fileUrl(href)}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-bold text-sky-700 hover:bg-sky-100"
+    >
+      <span className="material-symbols-outlined !text-[18px]" aria-hidden="true">description</span>
+      {children}
+    </a>
+  );
+}
 
 export default function EmployerVerification() {
+  const [overview, setOverview] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [taxId, setTaxId] = useState('');
+  const [form, setForm] = useState(EMPTY_FORM);
   const [licenseFile, setLicenseFile] = useState(null);
+  const [supportingFile, setSupportingFile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const loadData = useCallback(async () => {
+    setLoading(true);
     try {
-      const response = await api.get('/employer/profile');
-      setProfile(response.data);
-      if (response.data.taxId) setTaxId(response.data.taxId);
+      const [overviewResponse, profileResponse] = await Promise.all([
+        api.get('/employer/verification'),
+        api.get('/employer/profile'),
+      ]);
+      setOverview(overviewResponse.data);
+      setProfile(profileResponse.data);
+      setForm((current) => ({
+        ...current,
+        taxId: current.taxId || profileResponse.data.taxId || '',
+        legalCompanyName: current.legalCompanyName || profileResponse.data.companyName || '',
+        registrationAddress: current.registrationAddress || profileResponse.data.address || '',
+        representativeName: current.representativeName || profileResponse.data.fullName || '',
+      }));
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      toast.error(getApiErrorMessage(error, 'Không thể tải hồ sơ xác thực.'));
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const currentStatus = useMemo(() => {
+    if (overview?.currentStatus === 'Pending' && !overview?.latestSubmission) return 'Unverified';
+    return overview?.currentStatus || profile?.verificationStatus || 'Unverified';
+  }, [overview, profile]);
+
+  const updateField = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setLicenseFile(e.target.files[0]);
+  const validateFile = (file, label) => {
+    if (!file) return true;
+    const extension = `.${file.name.split('.').pop()?.toLowerCase()}`;
+    if (!['.png', '.jpg', '.jpeg', '.webp', '.pdf'].includes(extension)) {
+      toast.error(`${label} phải là ảnh hoặc PDF.`);
+      return false;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(`${label} không được vượt quá 5MB.`);
+      return false;
+    }
+    return true;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!taxId.trim()) {
-      toast.error('Vui lòng nhập Mã số thuế');
+  const submitVerification = async (event) => {
+    event.preventDefault();
+    const normalizedTaxId = form.taxId.replace(/\D/g, '');
+    if (normalizedTaxId.length < 10 || normalizedTaxId.length > 14) {
+      toast.error('Mã số thuế phải gồm từ 10 đến 14 chữ số.');
       return;
     }
-    if (!licenseFile && profile?.verificationStatus !== 'Pending' && profile?.verificationStatus !== 'Verified') {
-      toast.error('Vui lòng đính kèm Giấy phép kinh doanh');
+    if (!licenseFile) {
+      toast.error('Vui lòng chọn giấy phép đăng ký kinh doanh.');
       return;
     }
+    if (!validateFile(licenseFile, 'Giấy phép kinh doanh') ||
+        !validateFile(supportingFile, 'Tài liệu bổ sung')) return;
+
+    const payload = new FormData();
+    Object.entries({ ...form, taxId: normalizedTaxId }).forEach(([key, value]) => payload.append(key, value));
+    payload.append('businessLicenseFile', licenseFile);
+    if (supportingFile) payload.append('supportingDocumentFile', supportingFile);
 
     setSubmitting(true);
-    const formData = new FormData();
-    formData.append('TaxId', taxId);
-    if (licenseFile) {
-      formData.append('BusinessLicenseFile', licenseFile);
-    }
-
     try {
-      const response = await api.post('/employer/verify', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      toast.success('Gửi yêu cầu xác thực thành công');
-      setIsSuccess(true);
-      fetchProfile();
+      await api.post('/employer/verify', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+      toast.success('Đã gửi hồ sơ xác thực doanh nghiệp.');
       setLicenseFile(null);
-      setTimeout(() => setIsSuccess(false), 3000);
+      setSupportingFile(null);
+      await loadData();
     } catch (error) {
-      console.error('Submit verification error:', error);
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi gửi xác thực');
+      toast.error(getApiErrorMessage(error, 'Không thể gửi hồ sơ xác thực.'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const currentStatus = profile?.verificationStatus === 'Pending' && !profile?.businessLicenseUrl 
-    ? 'Unverified' 
-    : profile?.verificationStatus;
+  if (loading) {
+    return <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-600">Đang tải hồ sơ KYB...</div>;
+  }
 
-  if (loading) return <div className="p-8 text-center">Đang tải dữ liệu...</div>;
+  const latest = overview?.latestSubmission;
+  const canSubmit = overview?.canSubmit ?? currentStatus !== 'Verified';
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-slate-800">Xác thực Doanh nghiệp (KYB)</h2>
-        <p className="text-slate-500 mt-1">Xác thực thông tin để mở khóa tính năng Đăng tin tuyển dụng công khai.</p>
-      </div>
-
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="font-semibold text-slate-700">Trạng thái hiện tại:</span>
-          {currentStatus === 'Verified' && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium">
-              <span className="material-symbols-outlined !text-[16px]">verified</span>
-              Đã xác thực
-            </span>
-          )}
-          {currentStatus === 'Pending' && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
-              <span className="material-symbols-outlined !text-[16px]">pending_actions</span>
-              Đang chờ duyệt
-            </span>
-          )}
-          {currentStatus === 'Rejected' && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-sm font-medium">
-              <span className="material-symbols-outlined !text-[16px]">cancel</span>
-              Bị từ chối
-            </span>
-          )}
-          {currentStatus === 'Unverified' && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
-              <span className="material-symbols-outlined !text-[16px]">help</span>
-              Chưa xác thực
-            </span>
-          )}
-        </div>
-        {currentStatus === 'Verified' && (
-          <p className="text-emerald-600 text-sm">Hồ sơ của bạn đã được xác thực thành công. Bạn có thể đăng tin bình thường.</p>
-        )}
-        {currentStatus === 'Pending' && (
-          <p className="text-amber-600 text-sm">Hồ sơ đang trong quá trình xét duyệt. Chúng tôi sẽ phản hồi sớm nhất.</p>
-        )}
-        {currentStatus === 'Unverified' && (
-          <p className="text-slate-600 text-sm">Bạn cần điền mã số thuế và tải lên giấy phép kinh doanh để được xác thực.</p>
-        )}
-        {currentStatus === 'Rejected' && (
-          <p className="text-rose-600 text-sm">Hồ sơ của bạn không hợp lệ hoặc bị từ chối. Vui lòng kiểm tra và gửi lại.</p>
-        )}
-      </div>
-
-      {currentStatus !== 'Verified' && (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-xl">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Mã số thuế doanh nghiệp *</label>
-            <input
-              type="text"
-              value={taxId}
-              onChange={(e) => setTaxId(e.target.value)}
-              disabled={currentStatus === 'Pending'}
-              className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              placeholder="VD: 0312345678"
-              required
-            />
+    <section className="space-y-6" aria-labelledby="kyb-heading">
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="bg-gradient-to-r from-sky-600 to-blue-700 px-6 py-7 text-white lg:px-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-[0.18em] text-sky-100">Business verification</p>
+              <h2 id="kyb-heading" className="mt-1 text-2xl font-black">Xác thực doanh nghiệp (KYB)</h2>
+              <p className="mt-2 max-w-2xl text-sm text-sky-100">Cung cấp thông tin pháp lý để mở khóa đăng tuyển và tăng độ tin cậy với ứng viên.</p>
+            </div>
+            <StatusBadge status={currentStatus} />
           </div>
+        </div>
 
+        <div className="grid gap-6 p-6 lg:grid-cols-[1fr_320px] lg:p-8">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">Giấy phép ĐKKD (Ảnh/PDF) *</label>
-            {profile?.businessLicenseUrl && (
-              <div className="mb-3">
-                <a href={api.defaults.baseURL.replace('/api', '') + profile.businessLicenseUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline text-sm font-medium flex items-center gap-1">
-                  <span className="material-symbols-outlined !text-[16px]">description</span>
-                  Xem Giấy phép đã tải lên
-                </a>
+            {canSubmit ? (
+              <form className="space-y-5" onSubmit={submitVerification} noValidate>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-1.5 text-sm font-bold text-slate-700">
+                    Tên pháp lý doanh nghiệp *
+                    <input name="legalCompanyName" value={form.legalCompanyName} onChange={updateField} required className="w-full rounded-xl border border-slate-300 px-4 py-3 font-normal focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
+                  </label>
+                  <label className="space-y-1.5 text-sm font-bold text-slate-700">
+                    Mã số thuế *
+                    <input name="taxId" inputMode="numeric" value={form.taxId} onChange={updateField} required className="w-full rounded-xl border border-slate-300 px-4 py-3 font-normal focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
+                  </label>
+                </div>
+                <label className="block space-y-1.5 text-sm font-bold text-slate-700">
+                  Địa chỉ đăng ký kinh doanh *
+                  <textarea name="registrationAddress" value={form.registrationAddress} onChange={updateField} required rows="2" className="w-full rounded-xl border border-slate-300 px-4 py-3 font-normal focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
+                </label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-1.5 text-sm font-bold text-slate-700">
+                    Người đại diện pháp luật *
+                    <input name="representativeName" value={form.representativeName} onChange={updateField} required className="w-full rounded-xl border border-slate-300 px-4 py-3 font-normal focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
+                  </label>
+                  <label className="space-y-1.5 text-sm font-bold text-slate-700">
+                    Chức danh
+                    <input name="representativeTitle" value={form.representativeTitle} onChange={updateField} className="w-full rounded-xl border border-slate-300 px-4 py-3 font-normal focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
+                  </label>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-1.5 text-sm font-bold text-slate-700">
+                    Giấy phép ĐKKD *
+                    <input type="file" accept=".png,.jpg,.jpeg,.webp,.pdf" onChange={(event) => setLicenseFile(event.target.files?.[0] || null)} className="block w-full rounded-xl border border-dashed border-slate-300 p-3 font-normal" />
+                  </label>
+                  <label className="space-y-1.5 text-sm font-bold text-slate-700">
+                    Tài liệu bổ sung
+                    <input type="file" accept=".png,.jpg,.jpeg,.webp,.pdf" onChange={(event) => setSupportingFile(event.target.files?.[0] || null)} className="block w-full rounded-xl border border-dashed border-slate-300 p-3 font-normal" />
+                  </label>
+                </div>
+                <label className="block space-y-1.5 text-sm font-bold text-slate-700">
+                  Ghi chú cho quản trị viên
+                  <textarea name="submissionNote" value={form.submissionNote} onChange={updateField} maxLength="1000" rows="3" className="w-full rounded-xl border border-slate-300 px-4 py-3 font-normal focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200" />
+                </label>
+                <button type="submit" disabled={submitting} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-sky-600 px-6 py-3 font-black text-white hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60">
+                  <span className="material-symbols-outlined" aria-hidden="true">upload_file</span>
+                  {submitting ? 'Đang gửi hồ sơ...' : 'Gửi hồ sơ xác thực'}
+                </button>
+              </form>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                <h3 className="font-black text-slate-900">{overview?.blockingReason || 'Hồ sơ hiện không thể gửi lại.'}</h3>
+                {latest?.reviewNote && <p className="mt-2 text-sm text-rose-700"><strong>Phản hồi:</strong> {latest.reviewNote}</p>}
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <DocumentLink href={latest?.businessLicenseUrl}>Giấy phép kinh doanh</DocumentLink>
+                  <DocumentLink href={latest?.supportingDocumentUrl}>Tài liệu bổ sung</DocumentLink>
+                </div>
               </div>
             )}
-            <input
-              type="file"
-              onChange={handleFileChange}
-              disabled={currentStatus === 'Pending'}
-              accept=".png,.jpg,.jpeg,.pdf,.webp"
-              className="block w-full text-sm text-slate-500
-                file:mr-4 file:py-2 file:px-4
-                file:rounded-xl file:border-0
-                file:text-sm file:font-semibold
-                file:bg-primary/10 file:text-primary
-                hover:file:bg-primary/20"
-            />
-            <p className="mt-1 text-xs text-slate-500">Hỗ trợ định dạng: .jpg, .png, .pdf. Tối đa 5MB.</p>
           </div>
 
-          {(currentStatus !== 'Pending' || isSuccess) && (
-            <button
-              type="submit"
-              disabled={submitting || isSuccess}
-              className={`w-full py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${
-                isSuccess 
-                  ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                  : 'bg-primary text-white hover:bg-primary-600 disabled:bg-slate-400'
-              }`}
-            >
-              {isSuccess && <span className="material-symbols-outlined !text-[20px]">check_circle</span>}
-              {submitting ? 'Đang gửi...' : isSuccess ? 'Gửi yêu cầu xác thực thành công' : 'Gửi yêu cầu xác thực'}
-            </button>
-          )}
-        </form>
-      )}
-    </div>
+          <aside className="space-y-4 rounded-2xl bg-slate-50 p-5">
+            <h3 className="font-black text-slate-900">Quy trình xét duyệt</h3>
+            {['Điền thông tin pháp lý', 'Tải tài liệu hợp lệ', 'Quản trị viên kiểm tra', 'Nhận kết quả qua thông báo'].map((step, index) => (
+              <div key={step} className="flex gap-3 text-sm text-slate-700">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-100 font-black text-sky-700">{index + 1}</span>
+                <span className="pt-1">{step}</span>
+              </div>
+            ))}
+            <p className="rounded-xl bg-white p-3 text-xs leading-5 text-slate-600">Định dạng hỗ trợ: PNG, JPG, WEBP, PDF. Mỗi file tối đa 5MB.</p>
+          </aside>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <button type="button" onClick={() => setShowHistory((value) => !value)} aria-expanded={showHistory} className="flex w-full items-center justify-between text-left">
+          <span className="font-black text-slate-900">Lịch sử gửi hồ sơ ({overview?.history?.length || 0})</span>
+          <span className="material-symbols-outlined" aria-hidden="true">{showHistory ? 'expand_less' : 'expand_more'}</span>
+        </button>
+        {showHistory && (
+          <div className="mt-5 space-y-4">
+            {(overview?.history || []).length === 0 ? <p className="text-sm text-slate-500">Chưa có hồ sơ nào được gửi.</p> : overview.history.map((item) => (
+              <article key={item.verificationId} className="rounded-xl border border-slate-200 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <StatusBadge status={item.status} />
+                  <time className="text-xs font-semibold text-slate-500">{formatDate(item.submittedAt)}</time>
+                </div>
+                <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+                  <div><dt className="text-slate-500">Tên pháp lý</dt><dd className="font-bold text-slate-800">{item.legalCompanyName}</dd></div>
+                  <div><dt className="text-slate-500">Mã số thuế</dt><dd className="font-bold text-slate-800">{item.taxId}</dd></div>
+                  <div><dt className="text-slate-500">Người đại diện</dt><dd className="font-bold text-slate-800">{item.representativeName}</dd></div>
+                  <div><dt className="text-slate-500">Ngày xử lý</dt><dd className="font-bold text-slate-800">{formatDate(item.reviewedAt)}</dd></div>
+                </dl>
+                {item.reviewNote && <p className="mt-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{item.reviewNote}</p>}
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
