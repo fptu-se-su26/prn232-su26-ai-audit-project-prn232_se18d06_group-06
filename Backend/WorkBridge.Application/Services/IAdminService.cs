@@ -32,8 +32,8 @@ namespace WorkBridge.Application.Services
         Task<bool> UpdateReportStatusAsync(int reportId, string status);
 
         // Employer Verifications
-        Task<IEnumerable<AdminEmployerVerificationResponse>> GetPendingVerificationsAsync();
-        Task<bool> ReviewEmployerVerificationAsync(int employerId, string status);
+        Task<AdminVerificationListResponse> GetEmployerVerificationsAsync(string? status, string? search);
+        Task<bool> ReviewEmployerVerificationAsync(int verificationId, int adminUserId, AdminReviewVerificationRequest request);
     }
 
     public class AdminCategoryResponse

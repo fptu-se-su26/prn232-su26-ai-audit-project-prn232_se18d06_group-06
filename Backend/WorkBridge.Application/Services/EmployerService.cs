@@ -461,37 +461,117 @@ namespace WorkBridge.Application.Services
             return relativeUrl;
         }
 
-        public async Task<bool> SubmitVerificationAsync(int userId, SubmitVerificationRequest request)
+        public async Task<EmployerVerificationOverviewResponse> GetVerificationOverviewAsync(int userId)
         {
             var user = await _context.Users
                 .Include(u => u.EmployerProfile)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
-            if (user == null || user.EmployerProfile == null) return false;
+            if (user?.EmployerProfile == null)
+                throw new InvalidOperationException("Không tìm thấy hồ sơ doanh nghiệp.");
 
-            if (request.BusinessLicenseFile != null)
+            var submissions = await _context.EmployerVerifications
+                .Where(v => v.EmployerId == userId)
+                .OrderByDescending(v => v.SubmittedAt)
+                .ToListAsync();
+            var history = submissions.Select(MapVerification).ToList();
+            var latest = history.FirstOrDefault();
+            var hasPending = latest?.Status == "Pending";
+
+            return new EmployerVerificationOverviewResponse
             {
-                var ext = System.IO.Path.GetExtension(request.BusinessLicenseFile.FileName).ToLower();
-                var fileName = $"license_{userId}_{System.Guid.NewGuid()}{ext}";
+                CurrentStatus = user.EmployerProfile.VerificationStatus ?? "Unverified",
+                CanSubmit = !hasPending && user.EmployerProfile.VerificationStatus != "Verified",
+                BlockingReason = hasPending
+                    ? "Hồ sơ gần nhất đang chờ quản trị viên xét duyệt."
+                    : user.EmployerProfile.VerificationStatus == "Verified" ? "Doanh nghiệp đã được xác thực." : null,
+                LatestSubmission = latest,
+                History = history
+            };
+        }
 
-                var uploadsFolder = System.IO.Path.Combine(UploadStorage.ResolveUploadsRoot(_hostEnvironment.ContentRootPath), "verifications");
-                if (!System.IO.Directory.Exists(uploadsFolder))
-                    System.IO.Directory.CreateDirectory(uploadsFolder);
+        public async Task<EmployerVerificationResponse> SubmitVerificationAsync(int userId, SubmitVerificationRequest request)
+        {
+            var user = await _context.Users
+                .Include(u => u.EmployerProfile)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
 
-                var filePath = System.IO.Path.Combine(uploadsFolder, fileName);
-                using (var stream = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
-                {
-                    await request.BusinessLicenseFile.CopyToAsync(stream);
-                }
+            if (user?.EmployerProfile == null)
+                throw new InvalidOperationException("Không tìm thấy hồ sơ doanh nghiệp.");
+            if (user.EmployerProfile.VerificationStatus == "Verified")
+                throw new InvalidOperationException("Doanh nghiệp đã được xác thực.");
+            if (await _context.EmployerVerifications.AnyAsync(v => v.EmployerId == userId && v.Status == "Pending"))
+                throw new InvalidOperationException("Bạn đã có một hồ sơ đang chờ duyệt.");
 
-                user.EmployerProfile.BusinessLicenseUrl = $"/uploads/verifications/{fileName}";
-            }
+            var taxId = new string((request.TaxId ?? string.Empty).Where(char.IsDigit).ToArray());
+            if (taxId.Length is < 10 or > 14)
+                throw new InvalidOperationException("Mã số thuế phải gồm từ 10 đến 14 chữ số.");
+            if (string.IsNullOrWhiteSpace(request.LegalCompanyName) ||
+                string.IsNullOrWhiteSpace(request.RegistrationAddress) ||
+                string.IsNullOrWhiteSpace(request.RepresentativeName))
+                throw new InvalidOperationException("Thiếu thông tin pháp lý bắt buộc.");
 
-            user.EmployerProfile.TaxId = request.TaxId;
+            var licenseUrl = await SaveVerificationFileAsync(userId, "license", request.BusinessLicenseFile);
+            var supportUrl = request.SupportingDocumentFile == null
+                ? null
+                : await SaveVerificationFileAsync(userId, "support", request.SupportingDocumentFile);
+
+            var submission = new EmployerVerification
+            {
+                EmployerId = userId,
+                TaxId = taxId,
+                LegalCompanyName = request.LegalCompanyName.Trim(),
+                RegistrationAddress = request.RegistrationAddress.Trim(),
+                RepresentativeName = request.RepresentativeName.Trim(),
+                RepresentativeTitle = request.RepresentativeTitle?.Trim(),
+                BusinessLicenseUrl = licenseUrl,
+                SupportingDocumentUrl = supportUrl,
+                SubmissionNote = request.SubmissionNote?.Trim(),
+                Status = "Pending",
+                SubmittedAt = DateTime.UtcNow
+            };
+
+            await _context.EmployerVerifications.AddAsync(submission);
+            user.EmployerProfile.BusinessLicenseUrl = licenseUrl;
+            user.EmployerProfile.TaxId = taxId;
             user.EmployerProfile.VerificationStatus = "Pending";
-            
+            user.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-            return true;
+            return MapVerification(submission);
+        }
+
+        private async Task<string> SaveVerificationFileAsync(int userId, string prefix, IFormFile file)
+        {
+            var extension = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
+            var fileName = $"{prefix}_{userId}_{Guid.NewGuid():N}{extension}";
+            var folder = System.IO.Path.Combine(
+                UploadStorage.ResolveUploadsRoot(_hostEnvironment.ContentRootPath), "verifications", userId.ToString());
+            System.IO.Directory.CreateDirectory(folder);
+            await using var stream = new System.IO.FileStream(
+                System.IO.Path.Combine(folder, fileName), System.IO.FileMode.CreateNew);
+            await file.CopyToAsync(stream);
+            return $"/uploads/verifications/{userId}/{fileName}";
+        }
+
+        private static EmployerVerificationResponse MapVerification(EmployerVerification verification)
+        {
+            return new EmployerVerificationResponse
+            {
+                VerificationId = verification.VerificationId,
+                EmployerId = verification.EmployerId,
+                TaxId = verification.TaxId,
+                LegalCompanyName = verification.LegalCompanyName,
+                RegistrationAddress = verification.RegistrationAddress,
+                RepresentativeName = verification.RepresentativeName,
+                RepresentativeTitle = verification.RepresentativeTitle,
+                BusinessLicenseUrl = verification.BusinessLicenseUrl,
+                SupportingDocumentUrl = verification.SupportingDocumentUrl,
+                Status = verification.Status,
+                SubmissionNote = verification.SubmissionNote,
+                ReviewNote = verification.ReviewNote,
+                SubmittedAt = verification.SubmittedAt,
+                ReviewedAt = verification.ReviewedAt
+            };
         }
     }
 }

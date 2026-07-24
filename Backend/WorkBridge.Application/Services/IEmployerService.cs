@@ -17,6 +17,7 @@ namespace WorkBridge.Application.Services
         Task<bool> UpdateJobStatusAsync(int userId, int jobId, string status);
         Task<EmployerDashboardStats> GetDashboardStatsAsync(int userId);
         Task<string?> UploadLogoAsync(int userId, IFormFile file);
-        Task<bool> SubmitVerificationAsync(int userId, SubmitVerificationRequest request);
+        Task<EmployerVerificationResponse> SubmitVerificationAsync(int userId, SubmitVerificationRequest request);
+        Task<EmployerVerificationOverviewResponse> GetVerificationOverviewAsync(int userId);
     }
 }
