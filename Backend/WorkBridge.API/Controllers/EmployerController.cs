@@ -182,13 +182,31 @@ namespace WorkBridge.API.Controllers
             if (!allowedExtensions.Contains(ext))
                 return BadRequest(new { message = "Chỉ hỗ trợ định dạng ảnh (.png, .jpg) hoặc file PDF." });
 
+            if (request.SupportingDocumentFile != null)
+            {
+                var supportingExt = System.IO.Path.GetExtension(request.SupportingDocumentFile.FileName).ToLower();
+                if (request.SupportingDocumentFile.Length > maxImageSizeBytes || !allowedExtensions.Contains(supportingExt))
+                    return BadRequest(new { message = "Tài liệu bổ sung không hợp lệ hoặc vượt quá 5MB." });
+            }
+
             try
             {
                 var userId = GetUserId();
-                var success = await _employerService.SubmitVerificationAsync(userId, request);
-                if (!success) return NotFound(new { message = "Không tìm thấy hồ sơ nhà tuyển dụng." });
+                var submission = await _employerService.SubmitVerificationAsync(userId, request);
+                return Ok(new { message = "Hồ sơ xác thực đã được gửi và đang chờ duyệt.", submission });
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
 
-                return Ok(new { message = "Hồ sơ xác thực đã được gửi và đang chờ duyệt." });
+        [HttpGet("verification")]
+        public async Task<IActionResult> GetVerificationOverview()
+        {
+            try
+            {
+                return Ok(await _employerService.GetVerificationOverviewAsync(GetUserId()));
             }
             catch (System.Exception ex)
             {
